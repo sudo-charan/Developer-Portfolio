@@ -1,7 +1,8 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Cpu } from 'lucide-react'
 
-export default function Skills({ skills }) {
+export default memo(function Skills({ skills }) {
   const grouped = skills?.reduce((acc, skill) => {
     const group = skill.group || 'Other'
     if (!acc[group]) acc[group] = []
@@ -16,7 +17,7 @@ export default function Skills({ skills }) {
   ]
 
   return (
-    <section className="py-24 px-4 relative">
+    <section className="py-24 px-4 relative" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 600px' }}>
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
         backgroundImage: `linear-gradient(rgba(0, 242, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 242, 255, 0.1) 1px, transparent 1px)`,
         backgroundSize: '40px 40px'
@@ -73,4 +74,4 @@ export default function Skills({ skills }) {
       </div>
     </section>
   )
-}
+})

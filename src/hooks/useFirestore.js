@@ -31,12 +31,18 @@ const COLLECTION_FETCHERS = {
 export function useFirestoreCollection(collectionName, options = {}) {
   const defaultFetcher = COLLECTION_FETCHERS[collectionName]
   const fetcher = options.fetcher || defaultFetcher || noop
+  const deferMs = options.defer || 0
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [retryCount, setRetryCount] = useState(0)
   const timerRef = useRef(null)
   const mountedRef = useRef(true)
+  const fetcherRef = useRef(fetcher)
+  const deferRef = useRef(deferMs)
+
+  if (fetcherRef.current !== fetcher) fetcherRef.current = fetcher
+  if (deferRef.current !== deferMs) deferRef.current = deferMs
 
   const load = useCallback(async () => {
     if (!mountedRef.current) return
@@ -50,7 +56,13 @@ export function useFirestoreCollection(collectionName, options = {}) {
     }, FALLBACK_DELAY)
 
     try {
-      const result = await fetcher(options.params)
+      const currentFetcher = fetcherRef.current
+      const currentDefer = deferRef.current
+      let result
+      if (currentDefer > 0) {
+        await new Promise((resolve) => setTimeout(resolve, currentDefer))
+      }
+      result = await currentFetcher(options.params)
       if (mountedRef.current) {
         clearTimeout(timerRef.current)
         setData(result)
@@ -64,7 +76,7 @@ export function useFirestoreCollection(collectionName, options = {}) {
         setLoading(false)
       }
     }
-  }, [fetcher, options.params])
+  }, [options.params])
 
   useEffect(() => {
     mountedRef.current = true
@@ -100,6 +112,9 @@ export function useFirestoreDoc(fetcher) {
   const [retryCount, setRetryCount] = useState(0)
   const timerRef = useRef(null)
   const mountedRef = useRef(true)
+  const fetcherRef = useRef(fetcher)
+
+  if (fetcherRef.current !== fetcher) fetcherRef.current = fetcher
 
   const load = useCallback(async () => {
     if (!mountedRef.current) return
@@ -113,7 +128,7 @@ export function useFirestoreDoc(fetcher) {
     }, FALLBACK_DELAY)
 
     try {
-      const result = await fetcher()
+      const result = await fetcherRef.current()
       if (mountedRef.current) {
         clearTimeout(timerRef.current)
         setData(result)
@@ -127,7 +142,7 @@ export function useFirestoreDoc(fetcher) {
         setLoading(false)
       }
     }
-  }, [fetcher])
+  }, [])
 
   useEffect(() => {
     mountedRef.current = true

@@ -3,14 +3,14 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, Clock } from 'lucide-react'
 import { useBlogPost } from '../hooks/useFirestore'
 import { formatFirestoreDate } from '../utils/format'
-import Loader from '../components/Loader'
+import FullPageLoader from '../components/FullPageLoader'
 
 export default function BlogPost() {
   const { id } = useParams()
   const { data: post, loading, error } = useBlogPost(id)
 
   if (loading) {
-    return <Loader size={48} mode="full-page" />
+    return <FullPageLoader />
   }
 
   if (error || !post || post.status !== 'published') {
@@ -39,6 +39,8 @@ export default function BlogPost() {
             <img
               src={post.coverImage}
               alt={post.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-64 md:h-96 object-cover border border-dark-border mb-8"
             />
           )}

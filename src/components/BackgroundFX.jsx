@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+const PARTICLES = Array.from({ length: 8 }, (_, i) => ({
   id: i,
   left: `${Math.random() * 100}%`,
   top: `${Math.random() * 100}%`,

@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 
-export default function About({ content, settings }) {
+export default memo(function About({ content, settings }) {
   const aboutData = settings?.about || content?.about || {}
   return (
     <section id="about" className="py-16 px-4">
@@ -22,4 +23,4 @@ export default function About({ content, settings }) {
       </div>
     </section>
   )
-}
+})

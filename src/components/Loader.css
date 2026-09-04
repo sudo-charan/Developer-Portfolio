@@ -16,17 +16,6 @@
   margin: 0;
 }
 
-.loader-full-page {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: #0a0a0f;
-}
-.loader-section {
-  min-height: 60vh;
-  width: 100%;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .loader {
     animation-duration: 0.01ms !important;

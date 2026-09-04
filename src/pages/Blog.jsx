@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { Calendar, Clock, Search } from 'lucide-react'
 import { useBlogPosts } from '../hooks/useFirestore'
 import { formatFirestoreDate } from '../utils/format'
-import Loader from '../components/Loader'
+import FullPageLoader from '../components/FullPageLoader'
 
 export default function Blog() {
   const { data: posts = [], loading, error } = useBlogPosts('published')
@@ -61,7 +61,7 @@ export default function Blog() {
         </div>
 
         {loading ? (
-          <Loader mode="section" size={48} />
+          <FullPageLoader />
         ) : error ? (
           <div className="text-center py-20 text-text-muted">
             Failed to load blog posts. Please try again later.
@@ -82,11 +82,13 @@ export default function Blog() {
                 className="group bg-dark-surface p-6 lg:p-8 hover:bg-dark-elevated transition-all duration-300"
               >
                 {post.coverImage && (
-                  <img
-                    src={post.coverImage}
-                    alt={post.title}
-                    className="w-full h-48 object-cover border border-dark-border mb-4"
-                  />
+                   <img
+                     src={post.coverImage}
+                     alt={post.title}
+                     loading="lazy"
+                     decoding="async"
+                     className="w-full h-48 object-cover border border-dark-border mb-4"
+                   />
                 )}
                 <div className="flex items-center gap-3 mb-3">
                   {post.category && (

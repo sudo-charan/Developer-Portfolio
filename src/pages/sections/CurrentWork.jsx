@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, CheckCircle2 } from 'lucide-react'
 
-export default function CurrentWork({ currentWork }) {
+export default memo(function CurrentWork({ currentWork }) {
   return (
-    <section className="py-16 px-4 relative">
+    <section className="py-16 px-4 relative" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 400px' }}>
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
         backgroundSize: '40px 40px'
@@ -67,4 +68,4 @@ export default function CurrentWork({ currentWork }) {
       </div>
     </section>
   )
-}
+})

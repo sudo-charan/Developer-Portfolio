@@ -7,7 +7,7 @@ import {
   Award, Clock, FileText, MessageSquare, Settings, LogOut,
   Menu, X
 } from 'lucide-react'
-import Loader from '../components/Loader'
+import FullPageLoader from '../components/FullPageLoader'
 import { getUnreadMessageCount } from '../firebase/services'
 
 const navItems = [
@@ -98,9 +98,7 @@ export default function AdminLayout() {
   }
 
   if (loading) {
-    return (
-      <Loader size={48} mode="full-page" />
-    )
+    return <FullPageLoader />
   }
 
   if (!user || !isAdmin) {

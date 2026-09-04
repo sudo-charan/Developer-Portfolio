@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Sun, Moon, Download } from 'lucide-react'
@@ -14,7 +14,7 @@ const navLinks = [
   { name: 'Contact', href: '#contact' },
 ]
 
-export default function Layout() {
+export default memo(function Layout() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
@@ -198,4 +198,4 @@ export default function Layout() {
       <main><Outlet /></main>
     </div>
   )
-}
+})

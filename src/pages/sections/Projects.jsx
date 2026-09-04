@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { ExternalLink, Star, Terminal } from 'lucide-react'
 
@@ -37,12 +38,12 @@ function GuardGPTWorkflow() {
   )
 }
 
-export default function Projects({ projects }) {
+export default memo(function Projects({ projects }) {
   const featured = projects?.filter((p) => p.featured) || []
   const others = projects?.filter((p) => !p.featured) || []
 
   return (
-    <section id="projects" className="py-24 px-4">
+    <section id="projects" className="py-24 px-4 relative" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -131,11 +132,13 @@ export default function Projects({ projects }) {
                   </div>
                   {project.image && (
                     <div className="lg:w-96 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-dark-border overflow-hidden">
-                      <img
-                        src={project.image}
-                        alt={project.name}
-                        className="w-full h-48 lg:h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100"
-                      />
+                       <img
+                         src={project.image}
+                         alt={project.name}
+                         loading="lazy"
+                         decoding="async"
+                         className="w-full h-48 lg:h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100"
+                       />
                     </div>
                   )}
                 </div>
@@ -212,4 +215,4 @@ export default function Projects({ projects }) {
       </div>
     </section>
   )
-}
+})

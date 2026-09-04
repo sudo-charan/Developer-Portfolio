@@ -1,7 +1,8 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Award, ExternalLink } from 'lucide-react'
 
-export default function Certificates({ certificates }) {
+export default memo(function Certificates({ certificates }) {
   const categories = certificates?.reduce((acc, cert) => {
     const cat = cert.category || 'Other'
     if (!acc[cat]) acc[cat] = []
@@ -10,7 +11,7 @@ export default function Certificates({ certificates }) {
   }, {}) || {}
 
   return (
-    <section className="py-16 px-4 relative">
+    <section className="py-16 px-4 relative" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 600px' }}>
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: `radial-gradient(circle, rgba(249,115,22,0.3) 1px, transparent 1px)`,
         backgroundSize: '24px 24px'
@@ -72,11 +73,13 @@ export default function Certificates({ certificates }) {
                       </div>
                     </div>
                     {cert.image && (
-                      <img
-                        src={cert.image}
-                        alt={cert.name}
-                        className="mt-4 w-full h-32 object-cover border border-dark-border"
-                      />
+                       <img
+                         src={cert.image}
+                         alt={cert.name}
+                         loading="lazy"
+                         decoding="async"
+                         className="mt-4 w-full h-32 object-cover border border-dark-border"
+                       />
                     )}
                   </motion.div>
                 ))}
@@ -87,4 +90,4 @@ export default function Certificates({ certificates }) {
       </div>
     </section>
   )
-}
+})

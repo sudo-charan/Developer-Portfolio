@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { GraduationCap, Calendar, MapPin, Award } from 'lucide-react'
 
-export default function Education({ education }) {
+export default memo(function Education({ education }) {
   return (
-    <section className="py-16 px-4 relative">
+    <section className="py-16 px-4 relative" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 500px' }}>
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: `radial-gradient(circle, rgba(249,115,22,0.3) 1px, transparent 1px)`,
         backgroundSize: '24px 24px'
@@ -71,4 +72,4 @@ export default function Education({ education }) {
       </div>
     </section>
   )
-}
+})

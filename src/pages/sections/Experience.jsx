@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Calendar } from 'lucide-react'
 
-export default function Experience({ experiences }) {
+export default memo(function Experience({ experiences }) {
   return (
-    <section id="experience" className="py-16 px-4">
+    <section id="experience" className="py-16 px-4" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 500px' }}>
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -50,4 +51,4 @@ export default function Experience({ experiences }) {
       </div>
     </section>
   )
-}
+})

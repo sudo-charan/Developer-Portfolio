@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 
 const steps = [
@@ -23,7 +24,7 @@ const steps = [
   },
 ]
 
-export default function HowIWork() {
+export default memo(function HowIWork() {
   return (
     <section id="how-i-work" className="py-24 px-4">
       <div className="max-w-5xl mx-auto">
@@ -62,4 +63,4 @@ export default function HowIWork() {
       </div>
     </section>
   )
-}
+})
