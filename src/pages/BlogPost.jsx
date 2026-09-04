@@ -10,11 +10,7 @@ export default function BlogPost() {
   const { data: post, loading, error } = useBlogPost(id)
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-dark-bg">
-        <Loader size={48} />
-      </div>
-    )
+    return <Loader size={48} mode="full-page" />
   }
 
   if (error || !post || post.status !== 'published') {

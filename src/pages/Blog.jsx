@@ -61,9 +61,7 @@ export default function Blog() {
         </div>
 
         {loading ? (
-          <div className="min-h-[60vh] flex items-center justify-center">
-            <Loader size={48} />
-          </div>
+          <Loader mode="section" size={48} />
         ) : error ? (
           <div className="text-center py-20 text-text-muted">
             Failed to load blog posts. Please try again later.

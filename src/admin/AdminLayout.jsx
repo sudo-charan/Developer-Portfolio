@@ -99,9 +99,7 @@ export default function AdminLayout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-dark-bg">
-        <Loader size={48} />
-      </div>
+      <Loader size={48} mode="full-page" />
     )
   }
 

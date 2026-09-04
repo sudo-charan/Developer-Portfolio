@@ -25,11 +25,7 @@ export default function Home() {
   const isLoading = contentLoading || projectsLoading || skillsLoading || expLoading || eduLoading || certLoading || workLoading
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-dark-bg">
-        <Loader size={48} label="Loading page..." />
-      </div>
-    )
+    return <Loader size={48} label="Loading page..." mode="full-page" />
   }
 
   return (
