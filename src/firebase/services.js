@@ -8,8 +8,8 @@ import {
   where,
   addDoc,
   serverTimestamp,
-} from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+} from '@firebase/firestore'
+import { ref, uploadBytes, getDownloadURL, deleteObject } from '@firebase/storage'
 import { db, storage } from './config'
 
 function requireDb() {
@@ -111,6 +111,13 @@ export const getContactMessages = async () => {
   const q = query(collection(dbInstance, 'contactMessages'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+}
+
+export const getUnreadMessageCount = async () => {
+  const dbInstance = requireDb()
+  const q = query(collection(dbInstance, 'contactMessages'), where('status', '==', 'unread'))
+  const snapshot = await getDocs(q)
+  return snapshot.size
 }
 
 export const getSettings = async () => {

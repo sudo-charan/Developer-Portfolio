@@ -1,44 +1,111 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
-import Home from './pages/Home'
-import Blog from './pages/Blog'
-import BlogPost from './pages/BlogPost'
-import AdminLogin from './admin/AdminLogin'
-import AdminLayout from './admin/AdminLayout'
-import AdminDashboardIndex from './admin/pages/Dashboard'
-import ProjectsPage from './admin/pages/ProjectsPage'
-import SkillsPage from './admin/pages/SkillsPage'
-import ExperiencePage from './admin/pages/ExperiencePage'
-import EducationPage from './admin/pages/EducationPage'
-import CertificatesPage from './admin/pages/CertificatesPage'
-import CurrentWorkPage from './admin/pages/CurrentWorkPage'
-import BlogPage from './admin/pages/BlogPage'
-import MessagesPage from './admin/pages/MessagesPage'
-import SettingsPage from './admin/pages/SettingsPage'
+import PageLoader from './components/PageLoader'
+import NotFound from './pages/NotFound'
 import { AdminCacheProvider } from './admin/context/AdminCacheContext.jsx'
+
+const Home = lazy(() => import('./pages/Home'))
+const Blog = lazy(() => import('./pages/Blog'))
+const BlogPost = lazy(() => import('./pages/BlogPost'))
+const AdminLogin = lazy(() => import('./admin/AdminLogin'))
+const AdminLayout = lazy(() => import('./admin/AdminLayout'))
+const AdminDashboardIndex = lazy(() => import('./admin/pages/Dashboard'))
+const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
+const SkillsPage = lazy(() => import('./admin/pages/SkillsPage'))
+const ExperiencePage = lazy(() => import('./admin/pages/ExperiencePage'))
+const EducationPage = lazy(() => import('./admin/pages/EducationPage'))
+const CertificatesPage = lazy(() => import('./admin/pages/CertificatesPage'))
+const CurrentWorkPage = lazy(() => import('./admin/pages/CurrentWorkPage'))
+const BlogPage = lazy(() => import('./admin/pages/BlogPage'))
+const MessagesPage = lazy(() => import('./admin/pages/MessagesPage'))
+const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'))
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="blog" element={<Blog />} />
-        <Route path="blog/:id" element={<BlogPost />} />
+        <Route index element={
+          <Suspense fallback={<PageLoader />}>
+            <Home />
+          </Suspense>
+        } />
+        <Route path="blog" element={
+          <Suspense fallback={<PageLoader />}>
+            <Blog />
+          </Suspense>
+        } />
+        <Route path="blog/:id" element={
+          <Suspense fallback={<PageLoader />}>
+            <BlogPost />
+          </Suspense>
+        } />
       </Route>
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin" element={<AdminCacheProvider><AdminLayout /></AdminCacheProvider>}>
+      <Route path="/admin/login" element={
+        <Suspense fallback={<PageLoader />}>
+          <AdminLogin />
+        </Suspense>
+      } />
+      <Route path="/admin" element={
+        <Suspense fallback={<PageLoader />}>
+          <AdminCacheProvider>
+            <AdminLayout />
+          </AdminCacheProvider>
+        </Suspense>
+      }>
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboardIndex />} />
-        <Route path="projects" element={<ProjectsPage />} />
-        <Route path="skills" element={<SkillsPage />} />
-        <Route path="experience" element={<ExperiencePage />} />
-        <Route path="education" element={<EducationPage />} />
-        <Route path="certificates" element={<CertificatesPage />} />
-        <Route path="current-work" element={<CurrentWorkPage />} />
-        <Route path="blog" element={<BlogPage />} />
-        <Route path="messages" element={<MessagesPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="dashboard" element={
+          <Suspense fallback={<PageLoader />}>
+            <AdminDashboardIndex />
+          </Suspense>
+        } />
+        <Route path="projects" element={
+          <Suspense fallback={<PageLoader />}>
+            <ProjectsPage />
+          </Suspense>
+        } />
+        <Route path="skills" element={
+          <Suspense fallback={<PageLoader />}>
+            <SkillsPage />
+          </Suspense>
+        } />
+        <Route path="experience" element={
+          <Suspense fallback={<PageLoader />}>
+            <ExperiencePage />
+          </Suspense>
+        } />
+        <Route path="education" element={
+          <Suspense fallback={<PageLoader />}>
+            <EducationPage />
+          </Suspense>
+        } />
+        <Route path="certificates" element={
+          <Suspense fallback={<PageLoader />}>
+            <CertificatesPage />
+          </Suspense>
+        } />
+        <Route path="current-work" element={
+          <Suspense fallback={<PageLoader />}>
+            <CurrentWorkPage />
+          </Suspense>
+        } />
+        <Route path="blog" element={
+          <Suspense fallback={<PageLoader />}>
+            <BlogPage />
+          </Suspense>
+        } />
+        <Route path="messages" element={
+          <Suspense fallback={<PageLoader />}>
+            <MessagesPage />
+          </Suspense>
+        } />
+        <Route path="settings" element={
+          <Suspense fallback={<PageLoader />}>
+            <SettingsPage />
+          </Suspense>
+        } />
       </Route>
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }

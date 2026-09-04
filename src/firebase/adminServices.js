@@ -6,7 +6,7 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
-} from 'firebase/firestore'
+} from '@firebase/firestore'
 import { db } from './config'
 import { uploadFile, deleteFile } from './services'
 import { withTimeout, getUserFriendlyFirebaseError } from './errors'

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Navigate, Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signOut } from '@firebase/auth'
 import { auth } from '../firebase/config'
 import {
   LayoutDashboard, FolderOpen, Code, Briefcase, GraduationCap,
@@ -8,6 +8,7 @@ import {
   Menu, X
 } from 'lucide-react'
 import Loader from '../components/Loader'
+import { getUnreadMessageCount } from '../firebase/services'
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,6 +29,7 @@ export default function AdminLayout() {
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [authError, setAuthError] = useState('')
+  const [unreadCount, setUnreadCount] = useState(0)
   const navigate = useNavigate()
 
   const validateAdmin = async (currentUser) => {
@@ -68,6 +70,25 @@ export default function AdminLayout() {
     })
     return () => unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (!isAdmin) return
+    let cancelled = false
+    const fetchCount = async () => {
+      try {
+        const count = await getUnreadMessageCount()
+        if (!cancelled) setUnreadCount(count)
+      } catch {
+        // ignore count fetch errors
+      }
+    }
+    fetchCount()
+    const interval = setInterval(fetchCount, 30000)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [isAdmin])
 
   const handleLogout = async () => {
     if (auth) {
@@ -114,6 +135,11 @@ export default function AdminLayout() {
             >
               <item.icon size={18} />
               {item.label}
+              {item.path === 'messages' && unreadCount > 0 && (
+                <span className="ml-auto bg-accent text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                  {unreadCount}
+                </span>
+              )}
             </NavLink>
           ))}
           <button
