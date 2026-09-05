@@ -8,7 +8,6 @@ import {
   serverTimestamp,
 } from '@firebase/firestore'
 import { db } from './config'
-import { uploadFile, deleteFile } from './services'
 import { withTimeout, getUserFriendlyFirebaseError } from './errors'
 
 const requireDb = () => {
@@ -331,24 +330,6 @@ export const deleteContactMessage = async (id) => {
     await withTimeoutAndDb(() => deleteDoc(doc(db, 'contactMessages', id)))
   } catch (err) {
     console.error('deleteContactMessage failed:', err)
-    throw new Error(getUserFriendlyFirebaseError(err))
-  }
-}
-
-export const uploadAdminFile = async (path, file) => {
-  try {
-    return await withTimeoutAndDb(() => uploadFile(`admin/${path}`, file))
-  } catch (err) {
-    console.error('uploadAdminFile failed:', err)
-    throw new Error(getUserFriendlyFirebaseError(err))
-  }
-}
-
-export const deleteAdminFile = async (path) => {
-  try {
-    return await withTimeoutAndDb(() => deleteFile(`admin/${path}`))
-  } catch (err) {
-    console.error('deleteAdminFile failed:', err)
     throw new Error(getUserFriendlyFirebaseError(err))
   }
 }

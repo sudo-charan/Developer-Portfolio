@@ -154,7 +154,7 @@ export default function AdminDashboardIndex() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-8">
+  {/*    <div className="mb-8">
         <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-4">Quick Actions</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-dark-border">
           {quickActions.map((action) => (
@@ -172,7 +172,7 @@ export default function AdminDashboardIndex() {
             </button>
           ))}
         </div>
-      </div>
+      </div>  */}
 
       {/* System Status */}
       <div className="mb-8">
