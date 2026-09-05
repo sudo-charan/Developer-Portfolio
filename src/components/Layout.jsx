@@ -86,8 +86,8 @@ export default memo(function Layout() {
               {navLinks.map((link) => {
                 const isBlog = link.name === 'Blog'
                 const isActive = isBlog
-                  ? location.pathname === '/blog'
-                  : activeSection === link.href.replace('#', '')
+                  ? location.pathname === '/blog' || location.pathname.startsWith('/blog/')
+                  : location.pathname === '/' && activeSection === link.href.replace('#', '')
 
                 return (
                   <button
@@ -162,8 +162,8 @@ export default memo(function Layout() {
                 {navLinks.map((link) => {
                   const isBlog = link.name === 'Blog'
                   const isActive = isBlog
-                    ? location.pathname === '/blog'
-                    : activeSection === link.href.replace('#', '')
+                    ? location.pathname === '/blog' || location.pathname.startsWith('/blog/')
+                    : location.pathname === '/' && activeSection === link.href.replace('#', '')
 
                   return (
                     <button

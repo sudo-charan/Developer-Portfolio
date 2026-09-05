@@ -3,14 +3,14 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, Clock } from 'lucide-react'
 import { useBlogPost } from '../hooks/useFirestore'
 import { formatFirestoreDate } from '../utils/format'
-import FullPageLoader from '../components/FullPageLoader'
+import BlogPostSkeleton from '../components/blog/BlogPostSkeleton'
 
 export default function BlogPost() {
   const { id } = useParams()
   const { data: post, loading, error } = useBlogPost(id)
 
   if (loading) {
-    return <FullPageLoader />
+    return <BlogPostSkeleton />
   }
 
   if (error || !post || post.status !== 'published') {

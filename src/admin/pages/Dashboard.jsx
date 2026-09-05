@@ -174,11 +174,10 @@ export default function AdminDashboardIndex() {
         </div>
       </div>
 
-     {/* System Status */}
-{/*}      <div className="mb-8">
+      {/* System Status */}
+      <div className="mb-8">
         <SystemStatus />
       </div>
-*/}
       {/* Recent Activity + Messages */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
