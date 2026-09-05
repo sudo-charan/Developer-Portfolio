@@ -296,6 +296,36 @@ export const updateMessageStatus = async (id, status) => {
   }
 }
 
+export const toggleMessageStar = async (id, isStarred) => {
+  try {
+    await withTimeoutAndDb(() => updateDoc(doc(db, 'contactMessages', id), { isStarred }))
+  } catch (err) {
+    console.error('toggleMessageStar failed:', err)
+    throw new Error(getUserFriendlyFirebaseError(err))
+  }
+}
+
+export const toggleMessageArchive = async (id, isArchived) => {
+  try {
+    await withTimeoutAndDb(() => updateDoc(doc(db, 'contactMessages', id), { isArchived }))
+  } catch (err) {
+    console.error('toggleMessageArchive failed:', err)
+    throw new Error(getUserFriendlyFirebaseError(err))
+  }
+}
+
+export const bulkUpdateMessages = async (ids, updates) => {
+  try {
+    const promises = ids.map((id) =>
+      withTimeoutAndDb(() => updateDoc(doc(db, 'contactMessages', id), updates))
+    )
+    await Promise.all(promises)
+  } catch (err) {
+    console.error('bulkUpdateMessages failed:', err)
+    throw new Error(getUserFriendlyFirebaseError(err))
+  }
+}
+
 export const deleteContactMessage = async (id) => {
   try {
     await withTimeoutAndDb(() => deleteDoc(doc(db, 'contactMessages', id)))

@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import PageLoader from './components/PageLoader'
 import NotFound from './pages/NotFound'
 import { AdminCacheProvider } from './admin/context/AdminCacheContext.jsx'
+import { UnreadCountProvider } from './admin/context/UnreadCountContext'
 
 const Home = lazy(() => import('./pages/Home'))
 const Blog = lazy(() => import('./pages/Blog'))
@@ -49,7 +50,9 @@ function App() {
       <Route path="/admin" element={
         <Suspense fallback={<PageLoader />}>
           <AdminCacheProvider>
-            <AdminLayout />
+            <UnreadCountProvider>
+              <AdminLayout />
+            </UnreadCountProvider>
           </AdminCacheProvider>
         </Suspense>
       }>
