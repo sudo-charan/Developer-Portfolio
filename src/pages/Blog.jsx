@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { Calendar, Clock, Search } from 'lucide-react'
 import { useBlogPosts } from '../hooks/useFirestore'
 import { formatFirestoreDate } from '../utils/format'
-import FullPageLoader from '../components/FullPageLoader'
+import BlogCardSkeleton from '../components/blog/BlogCardSkeleton'
 
 export default function Blog() {
   const { data: posts = [], loading, error } = useBlogPosts('published')
@@ -61,7 +61,13 @@ export default function Blog() {
         </div>
 
         {loading ? (
-          <FullPageLoader />
+          <div className="grid md:grid-cols-2 gap-px bg-dark-border">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-dark-bg p-px">
+                <BlogCardSkeleton />
+              </div>
+            ))}
+          </div>
         ) : error ? (
           <div className="text-center py-20 text-text-muted">
             Failed to load blog posts. Please try again later.

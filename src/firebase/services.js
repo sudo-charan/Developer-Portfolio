@@ -79,23 +79,17 @@ export const getBlogPosts = async (status = 'published') => {
   const dbInstance = requireDb()
   let q
   if (status === 'all') {
-    q = query(collection(dbInstance, 'blogPosts'), orderBy('publishedAt', 'desc'))
+    q = query(collection(dbInstance, 'blogPosts'))
   } else {
-    q = query(
-      collection(dbInstance, 'blogPosts'),
-      where('status', '==', status),
-      orderBy('publishedAt', 'desc')
-    )
+    q = query(collection(dbInstance, 'blogPosts'), where('status', '==', status))
   }
   const snapshot = await getDocs(q)
   let posts = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-  if (status !== 'all') {
-    posts = posts.sort((a, b) => {
-      const aTime = a.publishedAt?.seconds ? a.publishedAt.seconds * 1000 : new Date(a.publishedAt || 0).getTime()
-      const bTime = b.publishedAt?.seconds ? b.publishedAt.seconds * 1000 : new Date(b.publishedAt || 0).getTime()
-      return bTime - aTime
-    })
-  }
+  posts = posts.sort((a, b) => {
+    const aTime = a.publishedAt?.seconds ? a.publishedAt.seconds * 1000 : new Date(a.publishedAt || 0).getTime()
+    const bTime = b.publishedAt?.seconds ? b.publishedAt.seconds * 1000 : new Date(b.publishedAt || 0).getTime()
+    return bTime - aTime
+  })
   return posts
 }
 
