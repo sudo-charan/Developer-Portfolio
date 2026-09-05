@@ -20,7 +20,10 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
           className="mb-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 border border-dark-border">
-            <span className="status-dot w-2 h-2 bg-accent rounded-full" />
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+            </span>
             <span className="text-sm text-text-secondary font-mono">
               {heroData.badge || 'Available for opportunities'}
             </span>
