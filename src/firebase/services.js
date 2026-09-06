@@ -10,6 +10,7 @@ import {
   serverTimestamp,
 } from '@firebase/firestore'
 import { db } from './config'
+import { withTimeout } from './errors'
 
 function requireDb() {
   if (!db) {
@@ -19,6 +20,11 @@ function requireDb() {
 }
 
 export { requireDb }
+
+async function withTimeoutAndDb(operation) {
+  requireDb()
+  return withTimeout(operation, 15000)
+}
 
 export const getSiteContent = async () => {
   const dbInstance = requireDb()
@@ -95,17 +101,19 @@ export const getBlogPost = async (id) => {
 }
 
 export const getContactMessages = async () => {
-  const dbInstance = requireDb()
-  const q = query(collection(dbInstance, 'contactMessages'), orderBy('createdAt', 'desc'))
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  return withTimeoutAndDb(async () => {
+    const q = query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc'))
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  })
 }
 
 export const getUnreadMessageCount = async () => {
-  const dbInstance = requireDb()
-  const q = query(collection(dbInstance, 'contactMessages'), where('status', '==', 'unread'))
-  const snapshot = await getDocs(q)
-  return snapshot.size
+  return withTimeoutAndDb(async () => {
+    const q = query(collection(db, 'contactMessages'), where('status', '==', 'unread'))
+    const snapshot = await getDocs(q)
+    return snapshot.size
+  })
 }
 
 export const getSettings = async () => {

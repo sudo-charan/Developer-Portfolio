@@ -12,6 +12,7 @@ import {
   bulkUpdateMessages,
   deleteContactMessage,
 } from '../../firebase/adminServices'
+import { getUserFriendlyFirebaseError } from '../../firebase/errors'
 import { SkeletonTable } from '../components/Skeletons'
 import { useAdminCache } from '../hooks/useAdminCache'
 
@@ -52,7 +53,7 @@ export default function MessagesPage() {
       setMessages(normalised)
       setItem(CACHE_KEY, normalised)
     } catch (err) {
-      setError('Failed to load messages. You may not have permission.')
+      setError(getUserFriendlyFirebaseError(err))
       console.error('Failed to load messages:', err)
       setMessages([])
     } finally {
