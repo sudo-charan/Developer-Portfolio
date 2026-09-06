@@ -9,21 +9,13 @@ import {
   addDoc,
   serverTimestamp,
 } from '@firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from '@firebase/storage'
-import { db, storage } from './config'
+import { db } from './config'
 
 function requireDb() {
   if (!db) {
     throw new Error('Firestore is not initialized. Check the Firebase environment configuration.')
   }
   return db
-}
-
-function requireStorage() {
-  if (!storage) {
-    throw new Error('Firebase Storage is not initialized. Check the Firebase environment configuration.')
-  }
-  return storage
 }
 
 export const getSiteContent = async () => {
@@ -119,19 +111,6 @@ export const getSettings = async () => {
   const docRef = doc(dbInstance, 'settings', 'general')
   const docSnap = await getDoc(docRef)
   return docSnap.exists() ? docSnap.data() : null
-}
-
-export const uploadFile = async (path, file) => {
-  const storageInstance = requireStorage()
-  const storageRef = ref(storageInstance, path)
-  await uploadBytes(storageRef, file)
-  return getDownloadURL(storageRef)
-}
-
-export const deleteFile = async (path) => {
-  const storageInstance = requireStorage()
-  const storageRef = ref(storageInstance, path)
-  await deleteObject(storageRef)
 }
 
 export const submitContactMessage = async (data) => {

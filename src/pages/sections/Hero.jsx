@@ -20,7 +20,7 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
           className="mb-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 border border-dark-border">
-            <span className="status-dot w-2 h-2 bg-accent rounded-full" />
+            <span className="status-dot w-2 h-2 bg-accent rounded-full" aria-hidden="true" />
             <span className="text-sm text-text-secondary font-mono">
               {heroData.badge || 'Available for opportunities'}
             </span>
@@ -65,10 +65,10 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
             View My Work
           </a>
           {resumeUrl && (
-            <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary flex items-center gap-2">
-              <Download size={18} />
-              Download Resume
-            </a>
+              <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary flex items-center gap-2">
+                <Download size={18} aria-hidden="true" />
+                Download Resume
+              </a>
           )}
           <a href="#contact" className="btn-secondary">
             Get In Touch
@@ -107,6 +107,7 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
             strokeLinecap="round"
             strokeLinejoin="round"
             className="h-4 w-4 animate-bounce text-accent/80 transition-colors group-hover:text-accent"
+            aria-hidden="true"
           >
             <path d="m6 9 6 6 6-6" />
           </svg>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Star, Trash2, MailOpen, Archive,
@@ -27,8 +27,17 @@ const normaliseMessage = (msg) => ({
 
 export default function MessagesPage() {
   const { get, set: setItem, clear: clearCache } = useAdminCache()
-  const [messages, setMessages] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [messages, setMessages] = useState(() => {
+    const cached = get(CACHE_KEY)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data.map(normaliseMessage)
+    }
+    return []
+  })
+  const [loading, setLoading] = useState(() => {
+    const cached = get(CACHE_KEY)
+    return !(cached && Date.now() - cached.timestamp < CACHE_TTL)
+  })
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState('all')
@@ -37,32 +46,29 @@ export default function MessagesPage() {
   const [selectedMessage, setSelectedMessage] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
 
-  const loadMessages = useCallback(async () => {
+  useEffect(() => {
     const cached = get(CACHE_KEY)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      setMessages(cached.data.map(normaliseMessage))
-      setLoading(false)
       return
     }
-    setLoading(true)
-    setError('')
-    try {
-      const data = await getContactMessages()
-      const normalised = (Array.isArray(data) ? data : []).map(normaliseMessage)
-      setMessages(normalised)
-      setItem(CACHE_KEY, normalised)
-    } catch (err) {
-      setError('Failed to load messages. You may not have permission.')
-      console.error('Failed to load messages:', err)
-      setMessages([])
-    } finally {
-      setLoading(false)
+    const load = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const data = await getContactMessages()
+        const normalised = (Array.isArray(data) ? data : []).map(normaliseMessage)
+        setMessages(normalised)
+        setItem(CACHE_KEY, normalised)
+      } catch (err) {
+        setError('Failed to load messages. You may not have permission.')
+        console.error('Failed to load messages:', err)
+        setMessages([])
+      } finally {
+        setLoading(false)
+      }
     }
+    load()
   }, [get, setItem])
-
-  useEffect(() => {
-    loadMessages()
-  }, [loadMessages])
 
   const filteredSorted = useMemo(() => {
     let result = messages
@@ -283,7 +289,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
+    <div className="flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-200px)] lg:h-[calc(100vh-200px)]">
       <div className="lg:w-3/5 xl:w-2/3 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -294,8 +300,10 @@ export default function MessagesPage() {
 
         <div className="flex items-center gap-3 mb-4">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="true" />
+            <label htmlFor="message-search" className="sr-only">Search messages</label>
             <input
+              id="message-search"
               type="text"
               placeholder="Search messages..."
               value={searchTerm}
@@ -303,7 +311,9 @@ export default function MessagesPage() {
               className="w-full pl-10 pr-4 py-2 bg-dark-bg border border-dark-border text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-accent"
             />
           </div>
+          <label htmlFor="message-sort" className="sr-only">Sort messages</label>
           <select
+            id="message-sort"
             value={sort}
             onChange={(e) => setSort(e.target.value)}
             className="px-3 py-2 bg-dark-bg border border-dark-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
@@ -325,11 +335,12 @@ export default function MessagesPage() {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
+              aria-current={filter === tab.key ? 'page' : undefined}
               className={`px-4 py-2 text-xs font-mono font-semibold transition-colors border-b-2 ${
                 filter === tab.key
                   ? 'border-accent text-accent'
                   : 'border-transparent text-text-muted hover:text-accent hover:border-accent/20'
-              }}`}
+              }`}
             >
               {tab.label}
             </button>
@@ -351,34 +362,34 @@ export default function MessagesPage() {
                 <button
                   onClick={handleBulkRead}
                   disabled={actionLoading}
-                  className="px-3 py-1 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors"
-                  title="Mark as read"
+                  className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
+                  aria-label="Mark as read"
                 >
-                  <MailOpen size={12} />
+                  <MailOpen size={14} aria-hidden="true" />
                 </button>
                 <button
                   onClick={handleBulkUnread}
                   disabled={actionLoading}
-                  className="px-3 py-1 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors"
-                  title="Mark as unread"
+                  className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
+                  aria-label="Mark as unread"
                 >
-                  <AlertCircle size={12} />
+                  <AlertCircle size={14} aria-hidden="true" />
                 </button>
                 <button
                   onClick={handleBulkArchive}
                   disabled={actionLoading}
-                  className="px-3 py-1 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors"
-                  title="Archive"
+                  className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
+                  aria-label="Archive selected"
                 >
-                  <Archive size={12} />
+                  <Archive size={14} aria-hidden="true" />
                 </button>
                 <button
                   onClick={handleBulkDelete}
                   disabled={actionLoading}
-                  className="px-3 py-1 text-xs font-mono border border-accent-2/30 hover:border-accent-2 hover:text-accent-2 transition-colors"
-                  title="Delete"
+                  className="p-2 border border-accent-2/30 hover:border-accent-2 hover:text-accent-2 transition-colors"
+                  aria-label="Delete selected"
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={14} aria-hidden="true" />
                 </button>
               </div>
             </motion.div>
@@ -387,7 +398,7 @@ export default function MessagesPage() {
 
         <div className="flex-1 overflow-y-auto border border-dark-border bg-dark-surface">
           {error && (
-            <div className="p-4 border-b border-accent-2/30 bg-accent-2/5 text-accent-2 text-sm">
+            <div role="alert" className="p-4 border-b border-accent-2/30 bg-accent-2/5 text-accent-2 text-sm">
               {error}
             </div>
           )}
@@ -397,66 +408,77 @@ export default function MessagesPage() {
             </div>
           ) : (
             filteredSorted.map((msg) => (
-              <div
-                key={msg.id}
-                onClick={() => { setSelectedMessage(msg); setSelectedIds([]) }}
-                className={`group p-4 border-b border-dark-border last:border-b-0 cursor-pointer transition-colors ${
-                  !msg.isRead && !msg.isArchived
-                    ? 'bg-accent/3 font-medium'
-                    : ''
-                } ${
-                  selectedIds.includes(msg.id) ? 'bg-accent/5' : ''
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="pt-0.5 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(msg.id)}
-                      onChange={(e) => {
-                        e.stopPropagation()
-                        const newIds = e.target.checked
-                          ? [...selectedIds, msg.id]
-                          : selectedIds.filter((id) => id !== msg.id)
-                        setSelectedIds(newIds)
-                      }}
-                      className="border-dark-border accent-accent"
-                    />
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        msg.isRead || msg.isArchived ? 'bg-text-muted' : 'bg-accent'
-                      }`}
-                      title={msg.isRead ? 'Read' : 'Unread'}
-                    />
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleToggleStar(msg) }}
-                    className={`p-1 transition-colors ${
-                      msg.isStarred ? 'text-accent' : 'text-text-muted hover:text-accent'
-                    }`}
-                  >
-                    <Star size={14} fill={msg.isStarred ? 'currentColor' : 'none'} />
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-sm font-medium truncate ${
-                        msg.isRead ? 'text-text-secondary' : 'text-text-primary'
-                      }`}>{msg.name || 'Anonymous'}</span>
-                      <span className="text-xs text-text-muted font-mono">
-                        {formatDate(msg)}
-                      </span>
-                    </div>
-                    {msg.subject && (
-                      <div className={`text-sm mb-1 truncate ${
-                        msg.isRead ? 'text-text-secondary' : 'text-text-primary'
-                      }`}>{msg.subject}</div>
-                    )}
-                    <div className="text-xs text-text-muted truncate">
-                      {msg.message || msg.email || ''}
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div
+                 key={msg.id}
+                 role="button"
+                 tabIndex={0}
+                 onClick={() => { setSelectedMessage(msg); setSelectedIds([]) }}
+                 onKeyDown={(e) => {
+                   if (e.key === 'Enter' || e.key === ' ') {
+                     e.preventDefault()
+                     setSelectedMessage(msg)
+                     setSelectedIds([])
+                   }
+                 }}
+                 className={`group p-4 border-b border-dark-border last:border-b-0 cursor-pointer transition-colors ${
+                   !msg.isRead && !msg.isArchived
+                     ? 'bg-accent/3 font-medium'
+                     : ''
+                 } ${
+                   selectedIds.includes(msg.id) ? 'bg-accent/5' : ''
+                 }`}
+               >
+                 <div className="flex items-start gap-3">
+                   <div className="pt-0.5 flex items-center gap-2">
+                     <input
+                       id={`message-checkbox-${msg.id}`}
+                       type="checkbox"
+                       checked={selectedIds.includes(msg.id)}
+                       onChange={(e) => {
+                         e.stopPropagation()
+                         const newIds = e.target.checked
+                           ? [...selectedIds, msg.id]
+                           : selectedIds.filter((id) => id !== msg.id)
+                         setSelectedIds(newIds)
+                       }}
+                       className="border-dark-border accent-accent"
+                     />
+                     <span
+                       className={`w-1.5 h-1.5 rounded-full ${
+                         msg.isRead || msg.isArchived ? 'bg-text-muted' : 'bg-accent'
+                       }`}
+                       title={msg.isRead ? 'Read' : 'Unread'}
+                     />
+                   </div>
+                   <button
+                     onClick={(e) => { e.stopPropagation(); handleToggleStar(msg) }}
+                     aria-label={msg.isStarred ? 'Unstar message' : 'Star message'}
+                     className={`p-2 transition-colors ${
+                       msg.isStarred ? 'text-accent' : 'text-text-muted hover:text-accent'
+                     }`}
+                   >
+                     <Star size={14} fill={msg.isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
+                   </button>
+                   <div className="flex-1 min-w-0">
+                     <div className="flex items-center gap-2 mb-1">
+                       <span className={`text-sm font-medium truncate ${
+                         msg.isRead ? 'text-text-secondary' : 'text-text-primary'
+                       }`}>{msg.name || 'Anonymous'}</span>
+                       <span className="text-xs text-text-muted font-mono">
+                         {formatDate(msg)}
+                       </span>
+                     </div>
+                     {msg.subject && (
+                       <div className={`text-sm mb-1 truncate ${
+                         msg.isRead ? 'text-text-secondary' : 'text-text-primary'
+                       }`}>{msg.subject}</div>
+                     )}
+                     <div className="text-xs text-text-muted truncate">
+                       {msg.message || msg.email || ''}
+                     </div>
+                   </div>
+                 </div>
+               </div>
             ))
           )}
         </div>
@@ -470,26 +492,27 @@ export default function MessagesPage() {
                 <h2 className="text-xs font-semibold uppercase tracking-widest text-text-muted">Message Details</h2>
                 <button
                   onClick={() => setSelectedMessage(null)}
+                  aria-label="Back to messages"
                   className="lg:hidden text-text-muted"
                 >
-                  <ArrowLeft size={18} />
+                  <ArrowLeft size={18} aria-hidden="true" />
                 </button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-text-muted">From</label>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">From</span>
                   <p className="text-sm font-medium mt-1">{selectedMessage.name || 'Anonymous'}</p>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-text-muted">Email</label>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">Email</span>
                   <p className="text-sm text-text-secondary mt-1 break-all">{selectedMessage.email || '—'}</p>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-text-muted">Subject</label>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">Subject</span>
                   <p className="text-sm text-text-secondary mt-1">{selectedMessage.subject || '—'}</p>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-text-muted">Received</label>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">Received</span>
                   <p className="text-sm text-text-secondary mt-1 font-mono">
                     {selectedMessage.createdAt?.seconds
                       ? new Date(selectedMessage.createdAt.seconds * 1000).toLocaleString()
@@ -516,13 +539,13 @@ export default function MessagesPage() {
               </div>
             </div>
             <div className="p-6 border-b border-dark-border flex-1 overflow-y-auto">
-              <label className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-2 block">Message</label>
+              <span className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-2 block">Message</span>
               <p className="text-sm text-text-secondary whitespace-pre-wrap break-words">
                 {selectedMessage.message || 'No message content.'}
               </p>
             </div>
-            <div className="p-4 border-t border-dark-border flex items-center justify-between gap-2">
-              <div className="flex gap-2">
+            <div className="p-4 border-t border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => handleToggleRead(selectedMessage)}
                   disabled={actionLoading}
@@ -537,25 +560,25 @@ export default function MessagesPage() {
                 >
                   {selectedMessage.isArchived ? 'Unarchive' : 'Archive'}
                 </button>
-                <a
-                  href={`mailto:${selectedMessage.email || ''}?subject=Re: ${encodeURIComponent(selectedMessage.subject || '')}`}
-                  className="px-3 py-1.5 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors flex items-center gap-1"
-                >
-                  <Reply size={12} /> Reply via Email
-                </a>
+                 <a
+                   href={`mailto:${selectedMessage.email || ''}?subject=Re: ${encodeURIComponent(selectedMessage.subject || '')}`}
+                   className="px-3 py-1.5 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors flex items-center gap-1"
+                 >
+                   <Reply size={12} aria-hidden="true" /> Reply via Email
+                 </a>
               </div>
               <button
                 onClick={() => handleDelete(selectedMessage)}
                 disabled={actionLoading}
                 className="px-3 py-1.5 text-xs font-mono border border-accent-2/30 hover:border-accent-2 hover:text-accent-2 transition-colors"
               >
-                <Trash2 size={12} className="inline mr-1" /> Delete
+                <Trash2 size={12} aria-hidden="true" className="inline mr-1" /> Delete
               </button>
             </div>
           </>
         ) : (
           <div className="p-8 text-center text-text-muted flex flex-col items-center justify-center h-full">
-            <MailOpen size={48} className="mb-4 opacity-30" />
+            <MailOpen size={48} className="mb-4 opacity-30" aria-hidden="true" />
             <p className="text-sm">Select a message to view details</p>
           </div>
         )}

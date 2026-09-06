@@ -41,8 +41,10 @@ export function useFirestoreCollection(collectionName, options = {}) {
   const fetcherRef = useRef(fetcher)
   const deferRef = useRef(deferMs)
 
-  if (fetcherRef.current !== fetcher) fetcherRef.current = fetcher
-  if (deferRef.current !== deferMs) deferRef.current = deferMs
+  useEffect(() => {
+    fetcherRef.current = fetcher
+    deferRef.current = deferMs
+  }, [fetcher, deferMs])
 
   const load = useCallback(async () => {
     if (!mountedRef.current) return
@@ -114,7 +116,9 @@ export function useFirestoreDoc(fetcher) {
   const mountedRef = useRef(true)
   const fetcherRef = useRef(fetcher)
 
-  if (fetcherRef.current !== fetcher) fetcherRef.current = fetcher
+  useEffect(() => {
+    fetcherRef.current = fetcher
+  }, [fetcher])
 
   const load = useCallback(async () => {
     if (!mountedRef.current) return

@@ -1,18 +1,17 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { onAuthStateChanged, signOut, getIdTokenResult } from '@firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth } from '../../firebase/config'
+import { AdminSessionContext } from './AdminSessionContext.js'
 
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000
 const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
 const TOKEN_REVALIDATE_INTERVAL_MS = 60 * 60 * 1000
 
-const AdminSessionContext = createContext(null)
-
 export function AdminSessionProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(auth ? true : false)
   const [authError, setAuthError] = useState('')
   const navigate = useNavigate()
 
@@ -24,7 +23,9 @@ export function AdminSessionProvider({ children }) {
   const isAdminRef = useRef(false)
   const currentUserRef = useRef(null)
 
-  isAdminRef.current = isAdmin
+  useEffect(() => {
+    isAdminRef.current = isAdmin
+  }, [isAdmin])
 
   const clearInactivityTimer = useCallback(() => {
     if (inactivityTimerRef.current) {
@@ -145,60 +146,60 @@ export function AdminSessionProvider({ children }) {
 
   useEffect(() => {
     if (!auth) {
-      setLoading(false)
-      setIsAdmin(false)
       return
     }
 
     let isMounted = true
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!isMounted) return
+     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+       if (!isMounted) return
 
-      const admin = await validateAdmin(firebaseUser)
+       const admin = await validateAdmin(firebaseUser)
 
-      if (admin && firebaseUser) {
-        subscribeActivity()
-        handleActivity()
+       if (admin && firebaseUser) {
+         subscribeActivity()
+         handleActivity()
 
-        tokenCheckIntervalRef.current = setInterval(async () => {
-          if (!auth) return
-          try {
-            const result = await getIdTokenResult(firebaseUser, true)
-            if (!isMounted || !auth) return
-            if (result.claims.admin !== true) {
-              if (signOutAndRedirectRef.current) {
-                signOutAndRedirectRef.current('Your admin session expired. Please sign in again.')
-              }
-            }
-          } catch {
-            if (isMounted && signOutAndRedirectRef.current) {
-              signOutAndRedirectRef.current('Your admin session expired. Please sign in again.')
-            }
-          }
-        }, TOKEN_REVALIDATE_INTERVAL_MS)
-      } else {
-        unsubscribeActivity()
-        clearInactivityTimer()
-        if (tokenCheckIntervalRef.current) {
-          clearInterval(tokenCheckIntervalRef.current)
-          tokenCheckIntervalRef.current = null
-        }
-      }
-    })
+         tokenCheckIntervalRef.current = setInterval(async () => {
+           if (!auth) return
+           try {
+             const result = await getIdTokenResult(firebaseUser, true)
+             if (!isMounted || !auth) return
+             if (result.claims.admin !== true) {
+               if (signOutAndRedirectRef.current) {
+                 signOutAndRedirectRef.current('Your admin session expired. Please sign in again.')
+               }
+             }
+           } catch {
+             if (isMounted && signOutAndRedirectRef.current) {
+               signOutAndRedirectRef.current('Your admin session expired. Please sign in again.')
+             }
+           }
+         }, TOKEN_REVALIDATE_INTERVAL_MS)
+       } else {
+         unsubscribeActivity()
+         clearInactivityTimer()
+         if (tokenCheckIntervalRef.current) {
+           clearInterval(tokenCheckIntervalRef.current)
+           tokenCheckIntervalRef.current = null
+         }
+       }
+     })
 
-    return () => {
-      isMounted = false
-      unsubscribe()
-      unsubscribeActivity()
-      clearInactivityTimer()
-      if (tokenCheckIntervalRef.current) {
-        clearInterval(tokenCheckIntervalRef.current)
-        tokenCheckIntervalRef.current = null
-      }
-      cleanupCallbacksRef.current.clear()
-    }
-  }, [validateAdmin, subscribeActivity, handleActivity, unsubscribeActivity, clearInactivityTimer])
+     const callbacks = cleanupCallbacksRef.current
+
+     return () => {
+       isMounted = false
+       unsubscribe()
+       unsubscribeActivity()
+       clearInactivityTimer()
+       if (tokenCheckIntervalRef.current) {
+         clearInterval(tokenCheckIntervalRef.current)
+         tokenCheckIntervalRef.current = null
+       }
+       callbacks.clear()
+     }
+   }, [validateAdmin, subscribeActivity, handleActivity, unsubscribeActivity, clearInactivityTimer])
 
   return (
     <AdminSessionContext.Provider
@@ -215,12 +216,4 @@ export function AdminSessionProvider({ children }) {
       {children}
     </AdminSessionContext.Provider>
   )
-}
-
-export function useAdminSession() {
-  const context = useContext(AdminSessionContext)
-  if (!context) {
-    throw new Error('useAdminSession must be used within AdminSessionProvider')
-  }
-  return context
 }

@@ -35,7 +35,7 @@ export default memo(function Education({ education }) {
             >
               <div className="flex items-start gap-4">
                 <div className="p-3 border border-dark-border bg-dark-bg flex-shrink-0">
-                  <GraduationCap className="text-accent" size={24} />
+                  <GraduationCap className="text-accent" size={24} aria-hidden="true" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-1">{edu.degree}</h3>
@@ -45,16 +45,16 @@ export default memo(function Education({ education }) {
                   <p className="text-text-primary font-medium mb-2">{edu.institution}</p>
                   <div className="flex flex-wrap items-center gap-4 text-sm text-text-muted">
                     <span className="flex items-center gap-1 font-mono text-xs">
-                      <Calendar size={14} />
+                      <Calendar size={14} aria-hidden="true" />
                        {edu.startYear} – {edu.endYear || 'Present'}
                     </span>
                     <span className="flex items-center gap-1 font-mono text-xs">
-                      <MapPin size={14} />
+                      <MapPin size={14} aria-hidden="true" />
                       {edu.location}
                     </span>
                     {edu.grade && (
                       <span className="flex items-center gap-1 font-mono text-xs">
-                        <Award size={14} />
+                        <Award size={14} aria-hidden="true" />
                         {edu.grade}
                       </span>
                     )}
