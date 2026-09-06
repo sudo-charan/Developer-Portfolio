@@ -1,14 +1,13 @@
-import { useState, useEffect } from 'react'
-import { Navigate, Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { onAuthStateChanged, signOut } from '@firebase/auth'
-import { auth } from '../firebase/config'
+import { useState } from 'react'
+import { Navigate, Outlet, NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, Code, Briefcase, GraduationCap,
   Award, Clock, FileText, MessageSquare, Settings, LogOut,
   Menu, X
 } from 'lucide-react'
 import FullPageLoader from '../components/FullPageLoader'
-import { useUnreadMessageCount } from './context/UnreadCountContext'
+import { useAdminSession } from './context/AdminSessionContext'
+import { useAdminCache } from './hooks/useAdminCache'
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,58 +23,13 @@ const navItems = [
 ]
 
 export default function AdminLayout() {
-  const [user, setUser] = useState(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { user, isAdmin, loading, authError, logout } = useAdminSession()
+  const { clear } = useAdminCache()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [authError, setAuthError] = useState('')
-  const unreadCount = useUnreadMessageCount()
-  const navigate = useNavigate()
-
-  const validateAdmin = async (currentUser) => {
-    if (!currentUser) {
-      setIsAdmin(false)
-      setUser(null)
-      setLoading(false)
-      return
-    }
-
-    try {
-      const tokenResult = await currentUser.getIdTokenResult(true)
-      const admin = tokenResult.claims.admin === true
-      setIsAdmin(admin)
-      setUser(currentUser)
-      if (!admin) {
-        setAuthError('Missing admin claim. Re-authenticate or contact the owner.')
-      } else {
-        setAuthError('')
-      }
-    } catch (error) {
-      setIsAdmin(false)
-      setUser(null)
-      setAuthError('Unable to verify admin access. Try signing in again.')
-      console.error('[Admin] Claim check failed:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!auth) {
-      setLoading(false)
-      return
-    }
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      await validateAdmin(currentUser)
-    })
-    return () => unsubscribe()
-  }, [])
 
   const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth)
-    }
-    navigate('/admin/login')
+    clear()
+    await logout()
   }
 
   if (loading) {
@@ -112,11 +66,6 @@ export default function AdminLayout() {
               >
                 <item.icon size={18} />
                 {item.label}
-                {item.path === 'messages' && unreadCount > 0 && (
-                  <span className="ml-auto bg-accent text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-                    {unreadCount}
-                  </span>
-                )}
               </NavLink>
             ))}
             <button
@@ -147,5 +96,5 @@ export default function AdminLayout() {
           </div>
         </main>
       </div>
-    )
-  }
+  )
+}

@@ -2,22 +2,45 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Lock, AlertCircle } from 'lucide-react'
-import { signInWithEmailAndPassword } from '@firebase/auth'
+import { signInWithEmailAndPassword, getIdTokenResult } from '@firebase/auth'
 import { auth } from '../firebase/config'
+import { useAdminSession } from './context/AdminSessionContext'
+import FullPageLoader from '../components/FullPageLoader'
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [checking, setChecking] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
+
+  const { user, isAdmin, loading: sessionLoading } = useAdminSession()
 
   useEffect(() => {
     if (location.state?.message) {
       setError(location.state.message)
     }
   }, [location.state])
+
+  useEffect(() => {
+    if (sessionLoading) return
+    if (!auth) {
+      setChecking(false)
+      setError('Firebase is not configured. Please add your Firebase config to .env')
+      return
+    }
+    if (!user) {
+      setChecking(false)
+      return
+    }
+    if (isAdmin) {
+      navigate('/admin', { replace: true })
+    } else {
+      setChecking(false)
+    }
+  }, [sessionLoading, user, isAdmin, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -28,13 +51,22 @@ export default function AdminLogin() {
     setLoading(true)
     setError('')
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      navigate('/admin', { replace: true })
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const tokenResult = await getIdTokenResult(userCredential.user, true)
+      if (tokenResult.claims.admin === true) {
+        navigate('/admin', { replace: true })
+      } else {
+        setError('Invalid credentials')
+      }
     } catch {
       setError('Invalid credentials')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checking || sessionLoading) {
+    return <FullPageLoader />
   }
 
   return (
