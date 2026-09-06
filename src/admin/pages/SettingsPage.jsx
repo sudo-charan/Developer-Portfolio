@@ -53,7 +53,7 @@ export default function SettingsPage() {
       setMessage('Settings saved successfully')
       setTimeout(() => setMessage(''), 3000)
     } catch (err) {
-      setMessage('Failed to save settings')
+      setMessage(err.message || 'Failed to save settings')
       console.error('[Admin CRUD] Settings save failed', {
         code: err.code,
         message: err.message,

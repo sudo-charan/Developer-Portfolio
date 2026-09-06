@@ -222,7 +222,7 @@ service cloud.firestore {
         && (!('about' in request.resource.data) || request.resource.data.about is map)
         && (!('socialLinks' in request.resource.data) || request.resource.data.socialLinks is map)
         && (!('resumeUrl' in request.resource.data) || request.resource.data.resumeUrl is string)
-        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is map);
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
     }
 
     // --- siteContent ---
