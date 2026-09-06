@@ -32,7 +32,7 @@ export default function SystemStatus() {
   const performChecks = useCallback(async () => {
     const firebaseStatus = db ? { status: 'online', value: 'INITIALIZED' } : { status: 'error', value: 'NOT INITIALIZED' }
     const authStatus = auth ? { status: 'online', value: 'ACTIVE' } : { status: 'error', value: 'NOT INITIALIZED' }
-    const storageStatus = storage ? { status: 'online', value: 'AVAILABLE' } : { status: 'error', value: 'NOT INITIALIZED' }
+    const storageStatus = storage ? { status: 'online', value: 'AVAILABLE' } : { status: 'warning', value: 'NOT CONFIGURED (Spark plan)' }
     const firestoreStatus = await checkFirestore()
 
     return {

@@ -1,9 +1,32 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Maximum upload size: 10 MB (10485760 bytes) — suitable for portfolio image assets
+    function isWithinSizeLimit() {
+      return request.resource.size <= 10 * 1024 * 1024;
+    }
+
+    // Allowed image content types for portfolio uploads
+    function hasValidImageType() {
+      return request.resource.contentType == 'image/jpeg'
+          || request.resource.contentType == 'image/png'
+          || request.resource.contentType == 'image/webp'
+          || request.resource.contentType == 'image/gif';
+    }
+
+    // Admin check: authenticated user with admin custom claim
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // Admin operations: upload, update, delete
+    // Only authenticated admins can write/delete
+    // Content-type and size validation are enforced server-side
     match /{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow create, update, delete: if isAdmin()
+                                   && hasValidImageType()
+                                   && isWithinSizeLimit();
     }
   }
 }

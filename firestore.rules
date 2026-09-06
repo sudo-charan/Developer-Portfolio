@@ -6,57 +6,345 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.admin == true;
     }
 
-    // Public portfolio content - read only for visitors
+    // --- projects ---
+    // Schema discovered from ProjectsPage.jsx (GenericCRUD fields) and
+    // adminServices.js (addProject/updateProject).
+    //
+    // Fields:
+    //   name        string   (required)
+    //   description string   (required)
+    //   github      string   (optional)
+    //   demo        string   (optional)
+    //   image       string   (optional)
+    //   tags        string   (optional, comma-separated)
+    //   status      string   (optional)
+    //   featured    bool     (optional)
+    //   createdAt   timestamp
+    //   updatedAt   timestamp
+    //   id          string   (included by GenericCRUD edit form data)
     match /projects/{document} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'name', 'description', 'github', 'demo', 'image',
+          'tags', 'status', 'featured', 'createdAt', 'updatedAt', 'id'
+        ])
+        && request.resource.data.keys().hasAll(['name', 'description'])
+        && (!('name' in request.resource.data) || request.resource.data.name is string)
+        && (!('description' in request.resource.data) || request.resource.data.description is string)
+        && (!('github' in request.resource.data) || request.resource.data.github is string)
+        && (!('demo' in request.resource.data) || request.resource.data.demo is string)
+        && (!('image' in request.resource.data) || request.resource.data.image is string)
+        && (!('tags' in request.resource.data) || request.resource.data.tags is string)
+        && (!('status' in request.resource.data) || request.resource.data.status is string)
+        && (!('featured' in request.resource.data) || request.resource.data.featured is bool)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string);
     }
 
+    // --- skills ---
+    // Schema discovered from SkillsPage.jsx (GenericCRUD fields) and
+    // adminServices.js (addSkill/updateSkill).
+    //
+    // Fields:
+    //   name  string (required)
+    //   group string (required)
+    //   order number (auto-set via Date.now())
+    //   id    string (included by GenericCRUD edit form data)
     match /skills/{document} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['name', 'group', 'order', 'id'])
+        && request.resource.data.keys().hasAll(['name', 'group'])
+        && (!('name' in request.resource.data) || request.resource.data.name is string)
+        && (!('group' in request.resource.data) || request.resource.data.group is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number)
+        && (!('id' in request.resource.data) || request.resource.data.id is string);
     }
 
+    // --- experience ---
+    // Schema discovered from ExperiencePage.jsx (GenericCRUD fields) and
+    // adminServices.js (addExperience/updateExperience).
+    //
+    // Fields:
+    //   title       string (required)
+    //   company     string (required)
+    //   location    string (required)
+    //   startDate   string (required)
+    //   endDate     string (optional)
+    //   description string (required)
+    //   createdAt   timestamp
+    //   updatedAt   timestamp
+    //   id          string (included by GenericCRUD edit form data)
     match /experience/{document} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'title', 'company', 'location', 'startDate', 'endDate',
+          'description', 'createdAt', 'updatedAt', 'id'
+        ])
+        && request.resource.data.keys().hasAll([
+          'title', 'company', 'location', 'startDate', 'description'
+        ])
+        && (!('title' in request.resource.data) || request.resource.data.title is string)
+        && (!('company' in request.resource.data) || request.resource.data.company is string)
+        && (!('location' in request.resource.data) || request.resource.data.location is string)
+        && (!('startDate' in request.resource.data) || request.resource.data.startDate is string)
+        && (!('endDate' in request.resource.data) || request.resource.data.endDate is string)
+        && (!('description' in request.resource.data) || request.resource.data.description is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string);
     }
 
+    // --- education ---
+    // Schema discovered from EducationPage.jsx (GenericCRUD fields) and
+    // adminServices.js (addEducation/updateEducation). Also confirmed by
+    // public Education.jsx section consumer.
+    //
+    // Fields:
+    //   degree       string (required)
+    //   branch       string (optional)
+    //   institution  string (required)
+    //   location     string (required)
+    //   startYear    string (required)
+    //   endYear      string (required)
+    //   grade        string (optional)
+    //   description  string (optional)
+    //   createdAt    timestamp
+    //   updatedAt    timestamp
+    //   id           string (included by GenericCRUD edit form data)
     match /education/{document} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'degree', 'branch', 'institution', 'location',
+          'startYear', 'endYear', 'grade', 'description',
+          'createdAt', 'updatedAt', 'id'
+        ])
+        && request.resource.data.keys().hasAll([
+          'degree', 'institution', 'location', 'startYear', 'endYear'
+        ])
+        && (!('degree' in request.resource.data) || request.resource.data.degree is string)
+        && (!('branch' in request.resource.data) || request.resource.data.branch is string)
+        && (!('institution' in request.resource.data) || request.resource.data.institution is string)
+        && (!('location' in request.resource.data) || request.resource.data.location is string)
+        && (!('startYear' in request.resource.data) || request.resource.data.startYear is string)
+        && (!('endYear' in request.resource.data) || request.resource.data.endYear is string)
+        && (!('grade' in request.resource.data) || request.resource.data.grade is string)
+        && (!('description' in request.resource.data) || request.resource.data.description is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string);
     }
 
+    // --- certificates ---
+    // Schema discovered from CertificatesPage.jsx (GenericCRUD fields) and
+    // adminServices.js (addCertificate/updateCertificate). Also confirmed by
+    // public Certificates.jsx section consumer.
+    //
+    // Fields:
+    //   name       string (required)
+    //   issuer     string (required)
+    //   year       string (required)
+    //   category   string (required)
+    //   verifyUrl  string (optional, URL)
+    //   image      string (optional, URL)
+    //   createdAt  timestamp
+    //   updatedAt  timestamp
+    //   id         string (included by GenericCRUD edit form data)
     match /certificates/{document} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'name', 'issuer', 'year', 'category', 'verifyUrl',
+          'image', 'createdAt', 'updatedAt', 'id'
+        ])
+        && request.resource.data.keys().hasAll([
+          'name', 'issuer', 'year', 'category'
+        ])
+        && (!('name' in request.resource.data) || request.resource.data.name is string)
+        && (!('issuer' in request.resource.data) || request.resource.data.issuer is string)
+        && (!('year' in request.resource.data) || request.resource.data.year is string)
+        && (!('category' in request.resource.data) || request.resource.data.category is string)
+        && (!('verifyUrl' in request.resource.data) || request.resource.data.verifyUrl is string)
+        && (!('image' in request.resource.data) || request.resource.data.image is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string);
     }
 
+    // --- currentWork ---
+    // Schema discovered from CurrentWorkPage.jsx (GenericCRUD fields) and
+    // adminServices.js (addCurrentWork/updateCurrentWork). Also confirmed by
+    // public CurrentWork.jsx section consumer (consumes title, description,
+    // status, order, updatedAt).
+    //
+    // Fields:
+    //   title       string (required)
+    //   description string (required)
+    //   status      string (required)
+    //   order       number (auto-set via Date.now())
+    //   createdAt   timestamp
+    //   updatedAt   timestamp
+    //   id          string (included by GenericCRUD edit form data)
     match /currentWork/{document} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'title', 'description', 'status', 'order',
+          'createdAt', 'updatedAt', 'id'
+        ])
+        && request.resource.data.keys().hasAll([
+          'title', 'description', 'status'
+        ])
+        && (!('title' in request.resource.data) || request.resource.data.title is string)
+        && (!('description' in request.resource.data) || request.resource.data.description is string)
+        && (!('status' in request.resource.data) || request.resource.data.status is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string);
     }
 
+    // --- settings ---
+    // Public read is intentionally preserved because the public portfolio
+    // depends on settings/general for hero text, social links, and resumeUrl.
+    // Only authenticated admins can create, update, or delete settings documents.
     match /settings/{document} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'hero', 'about', 'socialLinks', 'resumeUrl', 'updatedAt'
+        ])
+        && (!('hero' in request.resource.data) || request.resource.data.hero is map)
+        && (!('about' in request.resource.data) || request.resource.data.about is map)
+        && (!('socialLinks' in request.resource.data) || request.resource.data.socialLinks is map)
+        && (!('resumeUrl' in request.resource.data) || request.resource.data.resumeUrl is string)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is map);
     }
 
+    // --- siteContent ---
+    // Schema discovered from public consumers:
+    //   Hero.jsx reads  content?.hero   (map: name, title, badge, description)
+    //   About.jsx reads content?.about  (map: text)
+    // updateSiteContent (adminServices.js) uses setDoc with merge and adds
+    // updatedAt via serverTimestamp(). The function is currently unused by
+    // any admin page, but rules are provided for completeness.
+    //
+    // Fields:
+    //   hero      map    (optional)
+    //   about     map    (optional)
+    //   updatedAt timestamp
     match /siteContent/{document} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'hero', 'about', 'updatedAt'
+        ])
+        && (!('hero' in request.resource.data) || request.resource.data.hero is map)
+        && (!('about' in request.resource.data) || request.resource.data.about is map)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
     }
 
-    // Only published blog posts are publicly readable
+    // --- blogPosts ---
+    // Schema discovered from BlogPage.jsx (admin form + handlers) and
+    // adminServices.js (createBlogPost/updateBlogPost). Confirmed by public
+    // Blog.jsx and BlogPost.jsx consumers.
+    //
+    // Create data (from handleSubmit):
+    //   title       string (required)
+    //   content     string (required)
+    //   excerpt     string (optional)
+    //   category    string (optional)
+    //   tags        list   (array of strings)
+    //   status      string  enum: 'draft', 'published'
+    //   readingTime number
+    //
+    // publish/unpublish updates:
+    //   status      string  enum: 'draft', 'published'
+    //   publishedAt  timestamp (serverTimestamp) or string (ISO string)
+    //
+    // System fields:
+    //   createdAt   timestamp
+    //   updatedAt   timestamp
+    //   publishedAt  timestamp or string
+    //
+    // Read field (public consumer, not written by admin form):
+    //   coverImage  string (optional, URL)
     match /blogPosts/{document} {
       allow read: if resource.data.status == 'published' || isAdmin();
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'title', 'content', 'excerpt', 'category', 'tags',
+          'status', 'readingTime', 'coverImage',
+          'publishedAt', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll(['title', 'content'])
+        && (!('title' in request.resource.data) || request.resource.data.title is string)
+        && (!('content' in request.resource.data) || request.resource.data.content is string)
+        && (!('excerpt' in request.resource.data) || request.resource.data.excerpt is string)
+        && (!('category' in request.resource.data) || request.resource.data.category is string)
+        && (!('tags' in request.resource.data) || request.resource.data.tags is list)
+        && (!('status' in request.resource.data)
+          || request.resource.data.status == 'draft'
+          || request.resource.data.status == 'published')
+        && (!('readingTime' in request.resource.data) || request.resource.data.readingTime is number)
+        && (!('coverImage' in request.resource.data) || request.resource.data.coverImage is string)
+        && (!('publishedAt' in request.resource.data)
+          || request.resource.data.publishedAt is timestamp
+          || request.resource.data.publishedAt is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
     }
 
-    // Public can submit messages, only admin can read/manage
+    // --- contactMessages ---
+    // Public users may CREATE contact messages via the Contact.jsx form.
+    // The form submits: name, email, subject, message (all strings).
+    // submitContactMessage (services.js) adds: createdAt (serverTimestamp),
+    // status ('unread').
+    //
+    // Admins may READ, UPDATE, or DELETE. Admin update entry points:
+    //   updateMessageStatus   -> { status: 'read' | 'unread' | 'deleted' }
+    //   toggleMessageStar     -> { isStarred: bool }
+    //   toggleMessageArchive  -> { isArchived: bool }
+    //   bulkUpdateMessages    -> { status } | { isStarred } | { isArchived }
     match /contactMessages/{document} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
+      allow create: if true
+        && request.resource.data.keys().hasOnly([
+          'name', 'email', 'subject', 'message',
+          'createdAt', 'status', 'isStarred', 'isArchived'
+        ])
+        && request.resource.data.keys().hasAll(['name', 'email', 'subject', 'message'])
+        && (!('name' in request.resource.data) || request.resource.data.name is string)
+        && (!('email' in request.resource.data) || request.resource.data.email is string)
+        && (!('subject' in request.resource.data) || request.resource.data.subject is string)
+        && (!('message' in request.resource.data) || request.resource.data.message is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('status' in request.resource.data)
+          || request.resource.data.status == 'unread'
+          || request.resource.data.status == 'read'
+          || request.resource.data.status == 'deleted')
+        && (!('isStarred' in request.resource.data) || request.resource.data.isStarred is bool)
+        && (!('isArchived' in request.resource.data) || request.resource.data.isArchived is bool);
+
+      allow read, update, delete: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'name', 'email', 'subject', 'message',
+          'createdAt', 'status', 'isStarred', 'isArchived'
+        ])
+        && (!('name' in request.resource.data) || request.resource.data.name is string)
+        && (!('email' in request.resource.data) || request.resource.data.email is string)
+        && (!('subject' in request.resource.data) || request.resource.data.subject is string)
+        && (!('message' in request.resource.data) || request.resource.data.message is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('status' in request.resource.data)
+          || request.resource.data.status == 'unread'
+          || request.resource.data.status == 'read'
+          || request.resource.data.status == 'deleted')
+        && (!('isStarred' in request.resource.data) || request.resource.data.isStarred is bool)
+        && (!('isArchived' in request.resource.data) || request.resource.data.isArchived is bool);
     }
 
     // Default deny

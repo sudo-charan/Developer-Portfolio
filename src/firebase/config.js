@@ -22,6 +22,15 @@ try {
 
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
-export const storage = app ? getStorage(app) : null
+
+let storage = null
+if (app && firebaseConfig.storageBucket) {
+  try {
+    storage = getStorage(app)
+  } catch (error) {
+    console.warn('Firebase Storage not available:', error)
+  }
+}
+export { storage }
 
 export default app
