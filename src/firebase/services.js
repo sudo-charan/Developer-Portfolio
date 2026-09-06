@@ -9,7 +9,6 @@ import {
   addDoc,
   serverTimestamp,
 } from '@firebase/firestore'
-import { db } from './config'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from '@firebase/storage'
 import { db, storage, auth } from './config'
 

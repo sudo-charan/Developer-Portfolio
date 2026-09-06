@@ -50,7 +50,7 @@ export default memo(function Certificates({ certificates }) {
                   >
                     <div className="flex items-start gap-3">
                       <div className="p-2 border border-dark-border bg-dark-bg flex-shrink-0">
-                        <Award className="text-accent" size={20} aria-hidden="true" />
+                        <Award className="text-accent" size={20} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm mb-1 group-hover:text-accent transition-colors line-clamp-2">
@@ -60,27 +60,26 @@ export default memo(function Certificates({ certificates }) {
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-text-muted font-mono">{cert.year}</span>
                           {cert.verifyUrl && (
-                           <a
-                             href={cert.verifyUrl}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             className="text-text-muted hover:text-accent transition-colors"
-                             aria-label={`Verify ${cert.name} certificate`}
-                           >
-                             <ExternalLink size={14} aria-hidden="true" />
-                           </a>
+                            <a
+                              href={cert.verifyUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-text-muted hover:text-accent transition-colors"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
                           )}
                         </div>
                       </div>
                     </div>
                     {cert.image && (
                        <img
-                          src={cert.image}
-                          alt={`Certificate for ${cert.name} issued by ${cert.issuer || 'Unknown'}`}
-                          loading="lazy"
-                          decoding="async"
-                          className="mt-4 w-full h-32 object-cover border border-dark-border"
-                        />
+                         src={cert.image}
+                         alt={cert.name}
+                         loading="lazy"
+                         decoding="async"
+                         className="mt-4 w-full h-32 object-cover border border-dark-border"
+                       />
                     )}
                   </motion.div>
                 ))}

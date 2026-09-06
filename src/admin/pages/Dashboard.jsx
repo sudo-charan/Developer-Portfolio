@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { getProjects, getSkills, getExperience, getEducation, getCertificates, getCurrentWork, getBlogPosts, getContactMessages } from '../../firebase/services'
 import { auth } from '../../firebase/config'
-import { useUnreadMessageCount } from '../hooks/useUnreadMessageCount'
+import { useUnreadMessageCount } from '../context/UnreadCountContext'
 import { SkeletonCard, Skeleton } from '../components/Skeletons'
 import { useAdminCache } from '../hooks/useAdminCache'
 import SystemStatus from '../components/SystemStatus'
@@ -34,25 +34,18 @@ const quickActions = [
 
 export default function AdminDashboardIndex() {
   const { get, set: setItem } = useAdminCache()
-  const [counts, setCounts] = useState(() => {
-    const cached = get(CACHE_KEY)
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) return cached.data
-    return {}
-  })
-  const [loading, setLoading] = useState(() => {
-    const cached = get(CACHE_KEY)
-    return !(cached && Date.now() - cached.timestamp < CACHE_TTL)
-  })
-  const [updatedAt, setUpdatedAt] = useState(() => {
-    const cached = get(CACHE_KEY)
-    return cached && Date.now() - cached.timestamp < CACHE_TTL ? cached.timestamp : null
-  })
+  const [counts, setCounts] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [updatedAt, setUpdatedAt] = useState(null)
   const unreadCount = useUnreadMessageCount()
   const navigate = useNavigate()
 
   useEffect(() => {
     const cached = get(CACHE_KEY)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      setCounts(cached.data)
+      setUpdatedAt(cached.timestamp)
+      setLoading(false)
       return
     }
 
@@ -123,7 +116,7 @@ export default function AdminDashboardIndex() {
         </div>
         <div className="text-xs text-text-muted font-mono space-y-1">
           <div className="flex items-center gap-2">
-             <span className="relative flex h-2 w-2" aria-hidden="true">
+            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
@@ -144,17 +137,17 @@ export default function AdminDashboardIndex() {
               onClick={() => navigate(stat.path)}
               className="bg-dark-surface p-4 lg:p-6 hover:bg-dark-elevated transition-colors text-left group"
             >
-               <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 border border-dark-border bg-dark-bg group-hover:border-accent/30 transition-colors">
-                    <stat.icon size={18} className="text-accent" aria-hidden="true" />
-                  </div>
-                  <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">{stat.label}</span>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 border border-dark-border bg-dark-bg group-hover:border-accent/30 transition-colors">
+                  <stat.icon size={18} className="text-accent" />
                 </div>
+                <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">{stat.label}</span>
+              </div>
               <p className="text-3xl font-bold font-mono mb-1">{counts?.[stat.key] || 0}</p>
               <p className="text-text-muted text-xs mb-4">{stat.desc}</p>
-                <div className="flex items-center gap-1 text-xs text-accent opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
-                  View {stat.label.toLowerCase()} <ExternalLink size={12} aria-hidden="true" />
-                </div>
+              <div className="flex items-center gap-1 text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
+                View {stat.label.toLowerCase()} <ExternalLink size={12} />
+              </div>
             </button>
           ))}
         </div>
@@ -164,16 +157,15 @@ export default function AdminDashboardIndex() {
   {/*    <div className="mb-8">
         <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-4">Quick Actions</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-dark-border">
-            {quickActions.map((action) => (
+          {quickActions.map((action) => (
             <button
               key={action.label}
               onClick={() => navigate(action.path)}
-              aria-label={`Add new ${action.label.toLowerCase()}`}
               className="bg-dark-surface p-4 hover:bg-dark-elevated transition-colors flex items-center gap-3 group"
             >
-               <div className="p-2 border border-dark-border bg-dark-bg group-hover:border-accent/30 transition-colors">
-                 <action.icon size={16} className="text-accent" aria-hidden="true" />
-               </div>
+              <div className="p-2 border border-dark-border bg-dark-bg group-hover:border-accent/30 transition-colors">
+                <action.icon size={16} className="text-accent" />
+              </div>
               <span className="text-xs font-semibold uppercase tracking-widest text-text-secondary group-hover:text-accent transition-colors">
                 + {action.label}
               </span>
@@ -203,7 +195,7 @@ export default function AdminDashboardIndex() {
           >
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">Messages</span>
-              <ExternalLink size={14} className="text-text-muted group-hover:text-accent transition-colors" aria-hidden="true" />
+              <ExternalLink size={14} className="text-text-muted group-hover:text-accent transition-colors" />
             </div>
             <div className="flex items-end gap-3 mb-2">
               <span className="text-4xl font-bold font-mono">{String(unreadCount).padStart(2, '0')}</span>

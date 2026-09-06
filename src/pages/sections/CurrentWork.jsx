@@ -35,23 +35,20 @@ export default memo(function CurrentWork({ currentWork }) {
             >
               <div className="flex items-start gap-4">
                 <div className="p-3 border border-dark-border bg-dark-bg flex-shrink-0">
-                  <Clock className="text-accent" size={24} aria-hidden="true" />
+                  <Clock className="text-accent" size={24} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-bold">{item.title}</h3>
-                     <span className={`flex items-center gap-1 px-2 py-1 text-xs font-medium border ${
-                         item.status === 'in-progress'
-                           ? 'border-accent-3/30 text-accent-3'
-                           : 'border-accent/30 text-accent'
-                       }`}>
+                      <span className={`flex items-center gap-1 px-2 py-1 text-xs font-medium border ${
+                        item.status === 'in-progress'
+                          ? 'border-accent-3/30 text-accent-3'
+                          : 'border-accent/30 text-accent'
+                      }`}>
                         {item.status === 'in-progress' ? (
-                          <>
-                            <span className="w-3 h-3 border-2 border-accent-3 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-                            In Progress
-                          </>
+                          <span className="w-3 h-3 border-2 border-accent-3 border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <><CheckCircle2 size={12} aria-hidden="true" /> {item.status || 'Active'}</>
+                          <><CheckCircle2 size={12} /> {item.status || 'Active'}</>
                         )}
                       </span>
                   </div>

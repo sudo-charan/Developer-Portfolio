@@ -55,25 +55,8 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
   }, [fetcher, cacheKey, get, setItem])
 
   useEffect(() => {
-    const cached = get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return
-    }
-    fetcher()
-      .then((data) => {
-        const normalized = Array.isArray(data) ? data : []
-        setItems(normalized)
-        if (cacheKey) setItem(cacheKey, normalized)
-      })
-      .catch((err) => {
-        setError('Failed to load data. Please try again.')
-        console.error('Failed to fetch items:', err)
-        setItems([])
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [fetcher, cacheKey, get, setItem])
+    loadItems()
+  }, [loadItems])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -149,13 +132,13 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
           onClick={() => { resetForm(); setShowForm(true); }}
           className="btn-primary flex items-center gap-2"
         >
-          <Plus size={18} aria-hidden="true" />
+          <Plus size={18} />
           Add New
         </button>
       </div>
 
       {error && (
-        <div role="alert" className="mb-6 p-3 border border-accent-2/30 bg-accent-2/5 text-accent-2 text-sm">
+        <div className="mb-6 p-3 border border-accent-2/30 bg-accent-2/5 text-accent-2 text-sm">
           {error}
         </div>
       )}
@@ -170,23 +153,16 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold font-mono">{editing ? 'EDIT' : 'NEW'} {title.toUpperCase()}</h3>
-              <button
-                onClick={resetForm}
-                aria-label="Close form"
-                className="text-text-muted hover:text-text-primary"
-              >
-                <X size={20} aria-hidden="true" />
+              <button onClick={resetForm} className="text-text-muted hover:text-text-primary">
+                <X size={20} />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {fields.map((field) => {
-                const fieldId = `${cacheKey}-${field.name}`
-                return (
+              {fields.map((field) => (
                 <div key={field.name}>
-                  <label htmlFor={fieldId} className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-1">{field.label}</label>
+                  <label className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-1">{field.label}</label>
                   {field.type === 'textarea' ? (
                     <textarea
-                      id={fieldId}
                       value={formData[field.name] || ''}
                       onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
                       className="w-full px-4 py-2 bg-dark-bg border border-dark-border text-text-primary focus:outline-none focus:border-accent transition-colors"
@@ -194,9 +170,8 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
                       required={field.required}
                     />
                   ) : field.type === 'checkbox' ? (
-                    <label htmlFor={fieldId} className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
                       <input
-                        id={fieldId}
                         type="checkbox"
                         checked={!!formData[field.name]}
                         onChange={(e) => setFormData({ ...formData, [field.name]: e.target.checked })}
@@ -206,7 +181,6 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
                     </label>
                   ) : (
                     <input
-                      id={fieldId}
                       type={field.type || 'text'}
                       value={formData[field.name] || ''}
                       onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
@@ -215,8 +189,7 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
                     />
                   )}
                 </div>
-                )
-              })}
+              ))}
               <div className="flex gap-3">
                 <button type="submit" className="btn-primary" disabled={saving}>
                   {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
@@ -251,21 +224,11 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
                 )}
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => handleEdit(item)}
-                  aria-label={`Edit ${titleField ? item[titleField] : item.name || item.title || item.id}`}
-                  className="p-3 border border-dark-border hover:border-accent hover:text-accent transition-colors"
-                  disabled={saving}
-                >
-                  <Edit2 size={14} aria-hidden="true" />
+                <button onClick={() => handleEdit(item)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving}>
+                  <Edit2 size={14} />
                 </button>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  aria-label={`Delete ${titleField ? item[titleField] : item.name || item.title || item.id}`}
-                  className="p-3 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors"
-                  disabled={saving}
-                >
-                  <Trash2 size={14} aria-hidden="true" />
+                <button onClick={() => handleDelete(item.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving}>
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>

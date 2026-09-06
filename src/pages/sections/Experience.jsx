@@ -32,12 +32,12 @@ export default memo(function Experience({ experiences }) {
                   <p className="text-text-primary font-medium">{exp.company}</p>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-text-muted">
-                <span className="flex items-center gap-1 font-mono text-xs">
-                  <Calendar size={14} aria-hidden="true" />
-                   {exp.startDate} – {exp.endDate || 'Present'}
+                  <span className="flex items-center gap-1 font-mono text-xs">
+                    <Calendar size={14} />
+                    {exp.startDate} – {exp.endDate || 'Present'}
                   </span>
                   <span className="flex items-center gap-1 font-mono text-xs">
-                    <MapPin size={14} aria-hidden="true" />
+                    <MapPin size={14} />
                     {exp.location}
                   </span>
                 </div>

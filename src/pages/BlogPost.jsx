@@ -27,7 +27,7 @@ export default function BlogPost() {
     <div className="min-h-screen bg-dark-bg pt-24 pb-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link to="/blog" className="inline-flex items-center gap-2 text-text-muted hover:text-accent transition-colors mb-8">
-          <ArrowLeft size={16} aria-hidden="true" />
+          <ArrowLeft size={16} />
           Back to blog
         </Link>
 
@@ -52,12 +52,12 @@ export default function BlogPost() {
               </span>
             )}
             <span className="text-sm text-text-muted flex items-center gap-1">
-              <Calendar size={14} aria-hidden="true" />
+              <Calendar size={14} />
               {formatFirestoreDate(post.publishedAt)}
             </span>
             {post.readingTime && (
               <span className="text-sm text-text-muted flex items-center gap-1">
-                <Clock size={14} aria-hidden="true" />
+                <Clock size={14} />
                 {post.readingTime} min read
               </span>
             )}

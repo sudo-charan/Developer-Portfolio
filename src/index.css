@@ -51,12 +51,6 @@
   }
 }
 
-@layer utilities {
-  :focus-visible {
-    @apply outline-2 outline outline-offset-2 outline-accent/60;
-  }
-}
-
 @layer components {
   .section-label {
     @apply text-xs font-semibold uppercase tracking-widest text-accent mb-4;

@@ -18,12 +18,12 @@ export default memo(function Footer({ settings }) {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-text-muted">
           <p>© {new Date().getFullYear()} {settings?.hero?.name || 'Charanraj M'}. All rights reserved.</p>
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="flex items-center gap-2 hover:text-accent transition-colors"
-            >
-              Back to top <ArrowUp size={14} aria-hidden="true" />
-            </button>
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex items-center gap-2 hover:text-accent transition-colors"
+          >
+            Back to top <ArrowUp size={14} />
+          </button>
         </div>
       </div>
     </footer>
