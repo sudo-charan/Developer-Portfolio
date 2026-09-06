@@ -8,15 +8,26 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
   const heroData = settings?.hero || content?.hero || {}
   const socialLinks = settings?.socialLinks || {}
 
+  const entranceVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: (delay) => ({
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, delay, ease: [0.25, 0.4, 0.25, 1] },
+    }),
+  }
+
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center">
       <BackgroundFX />
+      <div className="cinematic-vignette" />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          initial="hidden"
+          animate="visible"
+          custom={0.3}
+          variants={entranceVariants}
           className="mb-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 border border-dark-border">
@@ -31,27 +42,30 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
         </motion.div>
 
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
+          initial="hidden"
+          animate="visible"
+          custom={0.45}
+          variants={entranceVariants}
           className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight"
         >
           {heroData.name || 'Charanraj M'}
         </motion.h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          initial="hidden"
+          animate="visible"
+          custom={0.6}
+          variants={entranceVariants}
           className="text-xl md:text-2xl text-text-secondary mb-4 font-mono"
         >
           {heroData.title || 'Full-Stack Developer · Cybersecurity Enthusiast · ISE Student'}
         </motion.p>
 
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
+          initial="hidden"
+          animate="visible"
+          custom={0.75}
+          variants={entranceVariants}
           className="text-base md:text-lg text-text-muted max-w-2xl mx-auto mb-10 leading-relaxed"
         >
           {heroData.description ||
@@ -59,9 +73,10 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          initial="hidden"
+          animate="visible"
+          custom={0.9}
+          variants={entranceVariants}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <a href="#projects" className="btn-primary">
@@ -81,7 +96,7 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 1 }}
+          transition={{ delay: 1.05, duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
           className="mt-16"
         >
           <div className="flex items-center justify-center gap-6 text-text-muted">
@@ -94,7 +109,7 @@ export default memo(function Hero({ content, resumeUrl, settings }) {
         <motion.a
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 1 }}
+          transition={{ delay: 1.2, duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
           href="#how-i-work"
           className="group inline-flex flex-col items-center gap-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-accent/90 transition-colors hover:text-accent"
         >

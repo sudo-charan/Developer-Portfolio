@@ -80,14 +80,47 @@
   .btn-primary {
     @apply px-6 py-3 bg-accent text-white font-semibold rounded-none hover:bg-accent/90 transition-all duration-200;
   }
+  .btn-primary:hover {
+    box-shadow: 0 0 20px rgba(249,115,22,0.3);
+    transform: translateY(-1px);
+  }
   html.light .btn-primary {
     @apply text-white;
   }
   .btn-secondary {
     @apply px-6 py-3 border border-dark-border text-text-primary font-semibold rounded-none hover:border-accent hover:text-accent transition-all duration-200;
   }
+  .btn-secondary:hover {
+    box-shadow: 0 0 15px rgba(249,115,22,0.2);
+    transform: translateY(-1px);
+  }
   html.light .btn-secondary {
     @apply border-light-border text-light-text-primary hover:border-accent hover:text-accent;
+  }
+  .social-link {
+    @apply p-3 bg-dark-surface border border-dark-border text-text-secondary transition-all duration-200;
+  }
+  .social-link:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(249,115,22,0.2);
+  }
+  html.light .social-link {
+    @apply bg-light-surface border-light-border text-light-text-primary;
+  }
+  html.light .social-link:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .cinematic-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 20%, rgba(5,5,5,0.08) 50%, rgba(5,5,5,0.15) 100%);
+  }
+  html.light .cinematic-vignette {
+    background: radial-gradient(ellipse at center, transparent 20%, rgba(248,250,252,0.05) 50%, rgba(248,250,252,0.08) 100%);
   }
   .divider {
     @apply w-full h-px bg-dark-border;
@@ -147,6 +180,45 @@
 .animate-drift-slow-reverse { animation: drift-slow-reverse 28s ease-in-out infinite; }
 .animate-pulse-slow { animation: pulse-slow 12s ease-in-out infinite; }
 .animate-float-particle { animation: float-particle linear infinite; }
+
+@keyframes rotate-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes rotate-zigzag {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(90deg); }
+  50% { transform: rotate(180deg); }
+  75% { transform: rotate(270deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes line-draw {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dasharray: 0; }
+}
+
+.animate-rotate-slow { animation: rotate-slow 80s linear infinite; }
+.animate-rotate-zigzag { animation: rotate-zigzag 120s ease-in-out infinite; }
+.animate-line-draw { animation: line-draw 3s ease-in-out infinite; }
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.02); }
+}
+@keyframes fog-drift {
+  0%, 100% { transform: translateX(0) translateY(0) scale(1); }
+  25% { transform: translateX(-2%) translateY(-1%) scale(1.02); }
+  50% { transform: translateX(1%) translateY(1%) scale(1); }
+  75% { transform: translateX(-1%) translateY(-1%) scale(1.01); }
+}
+@keyframes ground-shimmer {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.05; }
+}
+
+.animate-breathe { animation: breathe 18s ease-in-out infinite; }
+.animate-fog-drift { animation: fog-drift 40s ease-in-out infinite; }
+.animate-ground-shimmer { animation: ground-shimmer 14s ease-in-out infinite; }
 
 .status-dot {
   position: relative;

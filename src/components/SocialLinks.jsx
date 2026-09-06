@@ -5,7 +5,7 @@ const SocialIcon = ({ href, children, isMailto }) => (
     href={href}
     target={isMailto ? undefined : '_blank'}
     rel={isMailto ? undefined : 'noopener noreferrer'}
-    className="p-3 bg-dark-surface border border-dark-border hover:border-accent hover:text-accent transition-all"
+    className="social-link"
   >
     {children}
   </a>
