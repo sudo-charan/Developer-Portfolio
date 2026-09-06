@@ -21,27 +21,42 @@ export function getUserFriendlyFirebaseError(error) {
     return 'An unknown error occurred. Please try again.'
   }
 
-  const code = error.code || error.message || ''
+  const code = error.code || ''
+  const message = error.message || ''
 
-  if (typeof code === 'string' && code.includes('permission-denied')) {
+  const combined = `${code} ${message}`
+
+  if (combined.includes('permission-denied') || combined.includes('PERMISSION_DENIED')) {
     return 'Permission denied. You may not have admin access.'
   }
 
-  if (typeof code === 'string' && code.includes('unauthenticated')) {
+  if (combined.includes('unauthenticated') || combined.includes('UNAUTHENTICATED')) {
     return 'You are not authenticated. Please sign in again.'
   }
 
-  if (typeof code === 'string' && code.includes('unavailable')) {
+  if (combined.includes('unavailable') || combined.includes('UNAVAILABLE')) {
     return 'Firebase is temporarily unavailable. Check your connection and try again.'
   }
 
-  if (typeof code === 'string' && code.includes('deadline-exceeded')) {
+  if (combined.includes('deadline-exceeded') || combined.includes('DEADLINE_EXCEEDED')) {
     return 'The request timed out. Please try again.'
   }
 
-  if (typeof code === 'string' && code.includes('network')) {
+  if (combined.includes('network')) {
     return 'Network error. Check your internet connection.'
   }
 
-  return error.message || 'Operation failed. Please try again.'
+  if (combined.includes('resource-exhausted') || combined.includes('RESOURCE_EXHAUSTED')) {
+    return 'Firebase quota exceeded. Try again later.'
+  }
+
+  if (combined.includes('failed-precondition') || combined.includes('FAILED_PRECONDITION')) {
+    return 'Request failed. Check your Firebase configuration and Firestore rules.'
+  }
+
+  if (combined.includes('internal') || combined.includes('INTERNAL')) {
+    return 'Internal server error. Please try again later.'
+  }
+
+  return message || code || 'Operation failed. Please try again.'
 }

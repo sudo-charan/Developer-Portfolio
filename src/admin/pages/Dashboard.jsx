@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { getProjects, getSkills, getExperience, getEducation, getCertificates, getCurrentWork, getBlogPosts, getContactMessages } from '../../firebase/services'
 import { auth } from '../../firebase/config'
-import { useUnreadMessageCount } from '../context/UnreadCountContext'
+import { useUnreadMessageCount } from '../hooks/useUnreadMessageCount'
 import { SkeletonCard, Skeleton } from '../components/Skeletons'
 import { useAdminCache } from '../hooks/useAdminCache'
 import SystemStatus from '../components/SystemStatus'
@@ -23,13 +23,6 @@ const stats = [
   { label: 'Current Work', key: 'CurrentWork', icon: Clock, path: '/admin/current-work', desc: 'Active work items' },
   { label: 'Blog Posts', key: 'BlogPosts', icon: FileText, path: '/admin/blog', desc: 'Published articles' },
   { label: 'Messages', key: 'Messages', icon: MessageSquare, path: '/admin/messages', desc: 'Contact messages' },
-]
-
-const quickActions = [
-  { label: 'PROJECT', icon: FolderOpen, path: '/admin/projects' },
-  { label: 'EXPERIENCE', icon: Briefcase, path: '/admin/experience' },
-  { label: 'SKILL', icon: Code, path: '/admin/skills' },
-  { label: 'BLOG POST', icon: FileText, path: '/admin/blog' },
 ]
 
 export default function AdminDashboardIndex() {
@@ -153,27 +146,7 @@ export default function AdminDashboardIndex() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-  {/*    <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-4">Quick Actions</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-dark-border">
-          {quickActions.map((action) => (
-            <button
-              key={action.label}
-              onClick={() => navigate(action.path)}
-              className="bg-dark-surface p-4 hover:bg-dark-elevated transition-colors flex items-center gap-3 group"
-            >
-              <div className="p-2 border border-dark-border bg-dark-bg group-hover:border-accent/30 transition-colors">
-                <action.icon size={16} className="text-accent" />
-              </div>
-              <span className="text-xs font-semibold uppercase tracking-widest text-text-secondary group-hover:text-accent transition-colors">
-                + {action.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>  */}
-
+      {/* System Status */}
       {/* System Status */}
       <div className="mb-8">
         <SystemStatus />

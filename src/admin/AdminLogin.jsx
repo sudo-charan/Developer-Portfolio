@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Lock, AlertCircle } from 'lucide-react'
 import { signInWithEmailAndPassword, getIdTokenResult } from '@firebase/auth'
 import { auth } from '../firebase/config'
-import { useAdminSession } from './context/AdminSessionContext'
+import { useAdminSession } from './hooks/useAdminSession'
 import FullPageLoader from '../components/FullPageLoader'
 
 export default function AdminLogin() {

@@ -9,12 +9,7 @@ import {
 } from '@firebase/firestore'
 import { db } from './config'
 import { withTimeout, getUserFriendlyFirebaseError } from './errors'
-
-const requireDb = () => {
-  if (!db) {
-    throw new Error('Firestore is not initialized. Check your Firebase config in .env')
-  }
-}
+import { requireDb } from './services'
 
 async function withTimeoutAndDb(operation) {
   requireDb()
@@ -262,16 +257,6 @@ export const deleteBlogPost = async (id) => {
     await withTimeoutAndDb(() => deleteDoc(doc(db, 'blogPosts', id)))
   } catch (err) {
     console.error('deleteBlogPost failed:', err)
-    throw new Error(getUserFriendlyFirebaseError(err))
-  }
-}
-
-export const updateSiteContent = async (data) => {
-  try {
-    const ref = doc(db, 'siteContent', 'main')
-    await withTimeoutAndDb(() => setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true }))
-  } catch (err) {
-    console.error('updateSiteContent failed:', err)
     throw new Error(getUserFriendlyFirebaseError(err))
   }
 }

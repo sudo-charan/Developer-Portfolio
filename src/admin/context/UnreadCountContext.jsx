@@ -1,7 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { getUnreadMessageCount } from '../../firebase/services'
-
-const UnreadCountContext = createContext(null)
+import { useState, useEffect, useCallback } from 'react'
+import { getUnreadMessageCount } from '../../firebase/services.js'
+import { UnreadCountContext } from './UnreadCountContext.js'
 
 export function UnreadCountProvider({ children }) {
   const [count, setCount] = useState(0)
@@ -26,8 +25,4 @@ export function UnreadCountProvider({ children }) {
       {children}
     </UnreadCountContext.Provider>
   )
-}
-
-export function useUnreadMessageCount() {
-  return useContext(UnreadCountContext)
 }

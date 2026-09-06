@@ -1,13 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { onAuthStateChanged, signOut, getIdTokenResult } from '@firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth } from '../../firebase/config'
+import { AdminSessionContext } from './AdminSessionContext.js'
 
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000
 const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
 const TOKEN_REVALIDATE_INTERVAL_MS = 60 * 60 * 1000
-
-const AdminSessionContext = createContext(null)
 
 export function AdminSessionProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -215,12 +214,4 @@ export function AdminSessionProvider({ children }) {
       {children}
     </AdminSessionContext.Provider>
   )
-}
-
-export function useAdminSession() {
-  const context = useContext(AdminSessionContext)
-  if (!context) {
-    throw new Error('useAdminSession must be used within AdminSessionProvider')
-  }
-  return context
 }

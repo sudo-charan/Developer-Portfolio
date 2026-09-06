@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, CheckCircle2 } from 'lucide-react'
+import { formatFirestoreDate } from '../../utils/format'
 
 export default memo(function CurrentWork({ currentWork }) {
   return (
@@ -57,7 +58,7 @@ export default memo(function CurrentWork({ currentWork }) {
                   </p>
                   {item.updatedAt && (
                     <p className="text-text-muted text-xs font-mono">
-                      Last updated: {new Date(item.updatedAt).toLocaleDateString()}
+                      Last updated: {formatFirestoreDate(item.updatedAt)}
                     </p>
                   )}
                 </div>

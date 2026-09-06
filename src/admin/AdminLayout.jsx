@@ -6,7 +6,7 @@ import {
   Menu, X
 } from 'lucide-react'
 import FullPageLoader from '../components/FullPageLoader'
-import { useAdminSession } from './context/AdminSessionContext'
+import { useAdminSession } from './hooks/useAdminSession'
 import { useAdminCache } from './hooks/useAdminCache'
 
 const navItems = [
