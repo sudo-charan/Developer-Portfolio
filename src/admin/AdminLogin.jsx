@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Lock, AlertCircle } from 'lucide-react'
 import { signInWithEmailAndPassword, getIdTokenResult } from '@firebase/auth'
 import { auth } from '../firebase/config'
-import { useAdminSession } from './context/AdminSessionContext'
+import { useAdminSession } from './hooks/useAdminSession'
 import FullPageLoader from '../components/FullPageLoader'
 
 export default function AdminLogin() {
@@ -12,33 +12,19 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [checking, setChecking] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
 
   const { user, isAdmin, loading: sessionLoading } = useAdminSession()
-
-  useEffect(() => {
-    if (location.state?.message) {
-      setError(location.state.message)
-    }
-  }, [location.state])
+  const locationMessage = location.state?.message || ''
+  const authError = !auth ? 'Firebase is not configured. Please add your Firebase config to .env' : ''
+  const displayError = locationMessage || error || authError
 
   useEffect(() => {
     if (sessionLoading) return
-    if (!auth) {
-      setChecking(false)
-      setError('Firebase is not configured. Please add your Firebase config to .env')
-      return
-    }
-    if (!user) {
-      setChecking(false)
-      return
-    }
+    if (!user) return
     if (isAdmin) {
       navigate('/admin', { replace: true })
-    } else {
-      setChecking(false)
     }
   }, [sessionLoading, user, isAdmin, navigate])
 
@@ -65,8 +51,12 @@ export default function AdminLogin() {
     }
   }
 
-  if (checking || sessionLoading) {
+  if (sessionLoading) {
     return <FullPageLoader />
+  }
+
+  if (user && isAdmin) {
+    return null
   }
 
   return (
@@ -78,23 +68,28 @@ export default function AdminLogin() {
       >
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 border border-accent bg-dark-surface mb-4">
-            <Lock className="text-accent" size={24} />
+            <Lock className="text-accent" size={24} aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold mb-2 font-mono">ADMIN<span className="text-accent">_</span>LOGIN</h1>
           <p className="text-text-muted text-sm">Authenticate to manage portfolio content</p>
         </div>
         <form onSubmit={handleSubmit} className="border border-dark-border bg-dark-surface p-6 space-y-6">
-          {error && (
-            <div className="flex items-center gap-2 text-accent-2 text-sm border border-accent-2/30 bg-accent-2/5 p-3">
-              <AlertCircle size={16} />
-              {error}
+          {displayError && (
+            <div
+              role="alert"
+              className="flex items-center gap-2 text-accent-2 text-sm border border-accent-2/30 bg-accent-2/5 p-3"
+            >
+              <AlertCircle size={16} aria-hidden="true" />
+              {displayError}
             </div>
           )}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Email</label>
+            <label htmlFor="admin-login-email" className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Email</label>
             <input
+              id="admin-login-email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-dark-bg border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
@@ -102,10 +97,12 @@ export default function AdminLogin() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Password</label>
+            <label htmlFor="admin-login-password" className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Password</label>
             <input
+              id="admin-login-password"
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 bg-dark-bg border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"

@@ -42,7 +42,7 @@ export default memo(function Contact({ settings }) {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <h2 className="section-title">Get In Touch</h2>
             <div className="flex items-center gap-2 text-xs text-text-muted font-mono">
-              <span className="status-dot w-2 h-2 bg-accent rounded-full" />
+              <span className="status-dot w-2 h-2 bg-accent rounded-full" aria-hidden="true" />
               <span>CONNECTION_ENDPOINT_ACTIVE</span>
             </div>
           </div>
@@ -56,11 +56,13 @@ export default memo(function Contact({ settings }) {
           >
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Name</label>
+            <div>
+                  <label htmlFor="contact-name" className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Name</label>
                   <input
+                    id="contact-name"
                     type="text"
                     required
+                    autoComplete="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-3 bg-dark-surface border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
@@ -68,10 +70,12 @@ export default memo(function Contact({ settings }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Email</label>
+                  <label htmlFor="contact-email" className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Email</label>
                   <input
+                    id="contact-email"
                     type="email"
                     required
+                    autoComplete="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 bg-dark-surface border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
@@ -80,8 +84,9 @@ export default memo(function Contact({ settings }) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Subject</label>
+                <label htmlFor="contact-subject" className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Subject</label>
                 <input
+                  id="contact-subject"
                   type="text"
                   required
                   value={formData.subject}
@@ -91,8 +96,9 @@ export default memo(function Contact({ settings }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Message</label>
+                <label htmlFor="contact-message" className="block text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">Message</label>
                 <textarea
+                  id="contact-message"
                   required
                   rows={5}
                   value={formData.message}
@@ -102,7 +108,11 @@ export default memo(function Contact({ settings }) {
                 />
               </div>
               {status.message && (
-                <p className={`text-sm ${status.type === 'success' ? 'text-accent-3' : 'text-accent-2'}`}>
+                <p
+                  role={status.type === 'error' ? 'alert' : 'status'}
+                  aria-live={status.type === 'error' ? 'assertive' : 'polite'}
+                  className={`text-sm ${status.type === 'success' ? 'text-accent-3' : 'text-accent-2'}`}
+                >
                   {status.message}
                 </p>
               )}
@@ -114,7 +124,7 @@ export default memo(function Contact({ settings }) {
                 {loading ? (
                   <Loader size={20} />
                 ) : (
-                  <Send size={18} />
+                  <Send size={18} aria-hidden="true" />
                 )}
                 Send Message
               </button>
@@ -134,7 +144,7 @@ export default memo(function Contact({ settings }) {
 
               <div className="border border-dark-border bg-dark-surface p-6 flex items-center gap-4">
                 <div className="p-3 border border-dark-border bg-dark-bg">
-                  <Mail className="text-accent" size={24} />
+                  <Mail className="text-accent" size={24} aria-hidden="true" />
                 </div>
                 <div>
                   <p className="text-xs text-text-muted uppercase tracking-widest mb-1">Email</p>

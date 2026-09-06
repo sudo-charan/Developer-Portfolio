@@ -38,8 +38,10 @@ export default function Blog() {
 
         <div className="flex flex-col sm:flex-row gap-4 mb-12">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} aria-hidden="true" />
+            <label htmlFor="blog-search" className="sr-only">Search posts</label>
             <input
+              id="blog-search"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -47,7 +49,9 @@ export default function Blog() {
               className="w-full pl-10 pr-4 py-3 bg-dark-surface border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
             />
           </div>
+          <label htmlFor="blog-filter" className="sr-only">Filter by category</label>
           <select
+            id="blog-filter"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-4 py-3 bg-dark-surface border border-dark-border text-text-primary focus:outline-none focus:border-accent transition-colors"
@@ -69,7 +73,7 @@ export default function Blog() {
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-20 text-text-muted">
+          <div role="alert" className="text-center py-20 text-text-muted">
             Failed to load blog posts. Please try again later.
           </div>
         ) : filtered.length === 0 ? (
@@ -103,21 +107,19 @@ export default function Blog() {
                     </span>
                   )}
                   <span className="text-xs text-text-muted flex items-center gap-1">
-                    <Calendar size={12} />
+                    <Calendar size={12} aria-hidden="true" />
                      {formatFirestoreDate(post.publishedAt)}
                   </span>
                   {post.readingTime && (
                     <span className="text-xs text-text-muted flex items-center gap-1">
-                      <Clock size={12} />
+                      <Clock size={12} aria-hidden="true" />
                       {post.readingTime} min read
                     </span>
                   )}
                 </div>
-                <Link to={`/blog/${post.id}`}>
-                  <h2 className="text-xl font-bold mb-2 group-hover:text-accent transition-colors line-clamp-2">
-                    {post.title}
-                  </h2>
-                </Link>
+                <h2 className="text-xl font-bold mb-2 group-hover:text-accent transition-colors line-clamp-2">
+                  {post.title}
+                </h2>
                 <p className="text-text-secondary text-sm line-clamp-3 mb-4">
                   {post.excerpt || post.content?.substring(0, 150)}
                 </p>

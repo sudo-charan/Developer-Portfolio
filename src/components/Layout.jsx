@@ -39,6 +39,18 @@ export default memo(function Layout() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && mobileOpen) {
+        setMobileOpen(false)
+      }
+    }
+    if (mobileOpen) {
+      document.addEventListener('keydown', handleEscape)
+    }
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [mobileOpen])
+
   const scrollTo = (href) => {
     if (href.startsWith('/')) {
       navigate(href)
@@ -70,6 +82,7 @@ export default memo(function Layout() {
   return (
     <div className="min-h-screen bg-dark-bg">
       <nav
+        aria-label="Main navigation"
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? 'bg-dark-bg/90 backdrop-blur-xl border-b border-dark-border'
@@ -93,6 +106,7 @@ export default memo(function Layout() {
                   <button
                     key={link.name}
                     onClick={() => scrollTo(link.href)}
+                    aria-current={isActive ? 'page' : undefined}
                     className={`text-sm font-medium transition-colors duration-200 relative group ${
                       isActive
                         ? 'text-accent'
@@ -116,7 +130,7 @@ export default memo(function Layout() {
                 className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
                 aria-label="Toggle theme"
               >
-                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                {theme === 'dark' ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
               </button>
               {resumeUrl && (
                 <a
@@ -125,7 +139,7 @@ export default memo(function Layout() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-white hover:bg-accent/90 transition-colors"
                 >
-                  <Download size={16} />
+                  <Download size={16} aria-hidden="true" />
                   Resume
                 </a>
               )}
@@ -137,14 +151,16 @@ export default memo(function Layout() {
                 className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
                 aria-label="Toggle theme"
               >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                {theme === 'dark' ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
               </button>
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
+                aria-expanded={mobileOpen}
+                aria-controls="mobile-menu"
+                aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
                 className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
-                aria-label="Toggle menu"
               >
-                {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+                {mobileOpen ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
               </button>
             </div>
           </div>
@@ -153,6 +169,10 @@ export default memo(function Layout() {
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
+              id="mobile-menu"
+              role="dialog"
+              aria-label="Mobile navigation"
+              aria-modal="true"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -169,6 +189,7 @@ export default memo(function Layout() {
                     <button
                       key={link.name}
                       onClick={() => scrollTo(link.href)}
+                      aria-current={isActive ? 'page' : undefined}
                       className={`block w-full text-left px-4 py-3 text-sm font-medium transition-colors border-l-2 ${
                         isActive
                           ? 'text-accent bg-accent/5 border-accent'

@@ -49,7 +49,7 @@ export default memo(function Skills({ skills }) {
               <div className="absolute top-0 left-0 w-full h-1 bg-dark-border group-hover:bg-accent transition-colors duration-300" />
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <Cpu size={16} className="text-accent opacity-70" />
+                  <Cpu size={16} className="text-accent opacity-70" aria-hidden="true" />
                   <h3 className="text-xs font-mono uppercase tracking-widest text-text-primary group-hover:text-accent transition-colors">
                     {group}
                   </h3>

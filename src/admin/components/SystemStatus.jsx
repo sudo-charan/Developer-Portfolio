@@ -29,24 +29,24 @@ export default function SystemStatus() {
     website: { status: 'online', value: 'ONLINE' },
   })
 
-  const runChecks = useCallback(async () => {
+  const performChecks = useCallback(async () => {
     const firebaseStatus = db ? { status: 'online', value: 'INITIALIZED' } : { status: 'error', value: 'NOT INITIALIZED' }
     const authStatus = auth ? { status: 'online', value: 'ACTIVE' } : { status: 'error', value: 'NOT INITIALIZED' }
     const storageStatus = storage ? { status: 'online', value: 'AVAILABLE' } : { status: 'warning', value: 'NOT CONFIGURED (Spark plan)' }
     const firestoreStatus = await checkFirestore()
 
-    setStatus({
+    return {
       firebase: firebaseStatus,
       firestore: firestoreStatus,
       auth: authStatus,
       storage: storageStatus,
       website: { status: 'online', value: 'ONLINE' },
-    })
+    }
   }, [])
 
   useEffect(() => {
-    runChecks()
-  }, [runChecks])
+    performChecks().then(setStatus)
+  }, [performChecks])
 
   return (
     <motion.div
@@ -57,12 +57,12 @@ export default function SystemStatus() {
     >
       <div className="flex items-center justify-between mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-text-muted">System Status</p>
-        <button
-          onClick={runChecks}
+          <button
+            onClick={() => performChecks().then(setStatus)}
           className="p-1.5 border border-dark-border hover:border-accent hover:text-accent transition-colors"
           aria-label="Refresh system status"
         >
-          <RefreshCw size={12} />
+          <RefreshCw size={12} aria-hidden="true" />
         </button>
       </div>
       <div className="space-y-4">
