@@ -1,6 +1,6 @@
 import GenericCRUD from '../components/GenericCRUD'
 import { getEducation } from '../../firebase/services'
-import { addEducation, updateEducation, deleteEducation } from '../../firebase/adminServices'
+import { addEducation, updateEducation, deleteEducation, reorderItems } from '../../firebase/adminServices'
 
 const fields = [
   { name: 'degree', label: 'Degree', required: true },
@@ -48,6 +48,7 @@ export default function EducationPage() {
       adder={addEducation}
       updater={updateEducation}
       remover={deleteEducation}
+      reorderer={(orderPairs) => reorderItems('education', orderPairs)}
       cacheKey="admin_education"
       titleField="degree"
       subtitleField="institution"

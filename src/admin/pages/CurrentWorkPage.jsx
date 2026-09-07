@@ -1,6 +1,6 @@
 import GenericCRUD from '../components/GenericCRUD'
 import { getCurrentWork } from '../../firebase/services'
-import { addCurrentWork, updateCurrentWork, deleteCurrentWork } from '../../firebase/adminServices'
+import { addCurrentWork, updateCurrentWork, deleteCurrentWork, reorderItems } from '../../firebase/adminServices'
 
 const fields = [
   { name: 'title', label: 'Title', required: true },
@@ -17,6 +17,7 @@ export default function CurrentWorkPage() {
       adder={addCurrentWork}
       updater={updateCurrentWork}
       remover={deleteCurrentWork}
+      reorderer={(orderPairs) => reorderItems('currentWork', orderPairs)}
       cacheKey="admin_current_work"
       titleField="title"
       subtitleField="status"

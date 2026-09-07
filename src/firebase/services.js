@@ -33,11 +33,29 @@ export const getSiteContent = async () => {
   return docSnap.exists() ? docSnap.data() : null
 }
 
+function sortByOrder(items, fallbackKey, fallbackDesc = false) {
+  return [...items].sort((a, b) => {
+    const aOrder = typeof a.order === 'number'
+    const bOrder = typeof b.order === 'number'
+    if (aOrder && bOrder) return a.order - b.order
+    if (aOrder) return -1
+    if (bOrder) return 1
+    const aVal = a[fallbackKey]
+    const bVal = b[fallbackKey]
+    if (fallbackDesc) return (bVal > aVal) ? 1 : (bVal < aVal) ? -1 : 0
+    return (aVal > bVal) ? 1 : (aVal < bVal) ? -1 : 0
+  })
+}
+
 export const getProjects = async () => {
   const dbInstance = requireDb()
   const q = query(collection(dbInstance, 'projects'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  return sortByOrder(
+    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    'createdAt',
+    true
+  )
 }
 
 export const getSkills = async () => {
@@ -51,21 +69,33 @@ export const getExperience = async () => {
   const dbInstance = requireDb()
   const q = query(collection(dbInstance, 'experience'), orderBy('startDate', 'desc'))
   const snapshot = await getDocs(q)
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  return sortByOrder(
+    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    'startDate',
+    true
+  )
 }
 
 export const getEducation = async () => {
   const dbInstance = requireDb()
   const q = query(collection(dbInstance, 'education'), orderBy('startYear', 'desc'))
   const snapshot = await getDocs(q)
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  return sortByOrder(
+    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    'startYear',
+    true
+  )
 }
 
 export const getCertificates = async () => {
   const dbInstance = requireDb()
   const q = query(collection(dbInstance, 'certificates'), orderBy('year', 'desc'))
   const snapshot = await getDocs(q)
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  return sortByOrder(
+    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    'year',
+    true
+  )
 }
 
 export const getCurrentWork = async () => {

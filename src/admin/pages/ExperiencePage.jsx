@@ -1,6 +1,6 @@
 import GenericCRUD from '../components/GenericCRUD'
 import { getExperience } from '../../firebase/services'
-import { addExperience, updateExperience, deleteExperience } from '../../firebase/adminServices'
+import { addExperience, updateExperience, deleteExperience, reorderItems } from '../../firebase/adminServices'
 
 const fields = [
   { name: 'title', label: 'Job Title', required: true },
@@ -20,6 +20,7 @@ export default function ExperiencePage() {
       adder={addExperience}
       updater={updateExperience}
       remover={deleteExperience}
+      reorderer={(orderPairs) => reorderItems('experience', orderPairs)}
       cacheKey="admin_experience"
       titleField="title"
       subtitleField="company"

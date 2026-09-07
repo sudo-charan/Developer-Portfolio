@@ -12,8 +12,8 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'name', 'description', 'github', 'demo', 'image',
-          'tags', 'status', 'featured', 'createdAt', 'updatedAt', 'id'
-        ])
+           'tags', 'status', 'featured', 'createdAt', 'updatedAt', 'id', 'order'
+         ])
         && request.resource.data.keys().hasAll(['name', 'description'])
         && (!('name' in request.resource.data) || request.resource.data.name is string)
         && (!('description' in request.resource.data) || request.resource.data.description is string)
@@ -25,7 +25,8 @@ service cloud.firestore {
         && (!('featured' in request.resource.data) || request.resource.data.featured is bool)
         && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
         && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
-        && (!('id' in request.resource.data) || request.resource.data.id is string);
+        && (!('id' in request.resource.data) || request.resource.data.id is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number);
       allow delete: if isAdmin();
     }
 
@@ -48,7 +49,7 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'title', 'company', 'location', 'startDate', 'endDate',
-          'description', 'createdAt', 'updatedAt', 'id'
+          'description', 'createdAt', 'updatedAt', 'id', 'order'
         ])
         && request.resource.data.keys().hasAll([
           'title', 'company', 'location', 'startDate', 'description'
@@ -61,7 +62,8 @@ service cloud.firestore {
         && (!('description' in request.resource.data) || request.resource.data.description is string)
         && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
         && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
-        && (!('id' in request.resource.data) || request.resource.data.id is string);
+        && (!('id' in request.resource.data) || request.resource.data.id is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number);
       allow delete: if isAdmin();
     }
 
@@ -72,7 +74,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly([
           'degree', 'branch', 'institution', 'location',
           'startYear', 'endYear', 'grade', 'description',
-          'createdAt', 'updatedAt', 'id'
+           'createdAt', 'updatedAt', 'id', 'order'
         ])
         && request.resource.data.keys().hasAll([
           'degree', 'institution', 'location', 'startYear', 'endYear'
@@ -87,7 +89,8 @@ service cloud.firestore {
         && (!('description' in request.resource.data) || request.resource.data.description is string)
         && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
         && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
-        && (!('id' in request.resource.data) || request.resource.data.id is string);
+        && (!('id' in request.resource.data) || request.resource.data.id is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number);
       allow delete: if isAdmin();
     }
 
@@ -97,20 +100,21 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'name', 'issuer', 'year', 'category', 'verifyUrl',
-          'image', 'createdAt', 'updatedAt', 'id'
-        ])
-        && request.resource.data.keys().hasAll([
-          'name', 'issuer', 'year', 'category'
-        ])
-        && (!('name' in request.resource.data) || request.resource.data.name is string)
-        && (!('issuer' in request.resource.data) || request.resource.data.issuer is string)
-        && (!('year' in request.resource.data) || request.resource.data.year is string)
-        && (!('category' in request.resource.data) || request.resource.data.category is string)
-        && (!('verifyUrl' in request.resource.data) || request.resource.data.verifyUrl is string)
-        && (!('image' in request.resource.data) || request.resource.data.image is string)
-        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
-        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
-        && (!('id' in request.resource.data) || request.resource.data.id is string);
+          'image', 'createdAt', 'updatedAt', 'id', 'order'
+         ])
+         && request.resource.data.keys().hasAll([
+           'name', 'issuer', 'year', 'category'
+         ])
+         && (!('name' in request.resource.data) || request.resource.data.name is string)
+         && (!('issuer' in request.resource.data) || request.resource.data.issuer is string)
+         && (!('year' in request.resource.data) || request.resource.data.year is string)
+         && (!('category' in request.resource.data) || request.resource.data.category is string)
+         && (!('verifyUrl' in request.resource.data) || request.resource.data.verifyUrl is string)
+         && (!('image' in request.resource.data) || request.resource.data.image is string)
+         && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+         && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+         && (!('id' in request.resource.data) || request.resource.data.id is string)
+         && (!('order' in request.resource.data) || request.resource.data.order is number);
       allow delete: if isAdmin();
     }
 
@@ -120,7 +124,7 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'title', 'description', 'status', 'order',
-          'createdAt', 'updatedAt', 'id'
+           'createdAt', 'updatedAt', 'id', 'order'
         ])
         && request.resource.data.keys().hasAll([
           'title', 'description', 'status'

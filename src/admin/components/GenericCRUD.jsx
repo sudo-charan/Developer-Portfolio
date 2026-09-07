@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, X } from 'lucide-react'
+import { motion, AnimatePresence, Reorder } from 'framer-motion'
+import { Plus, Edit2, Trash2, X, GripVertical } from 'lucide-react'
 import { SkeletonTable } from './Skeletons'
 import { useAdminCache } from '../hooks/useAdminCache'
 
 const CACHE_TTL = 60 * 1000
 
-export default function GenericCRUD({ title, fields, fetcher, adder, updater, remover, cacheKey, titleField, subtitleField, renderItem }) {
+export default function GenericCRUD({ title, fields, fetcher, adder, updater, remover, cacheKey, titleField, subtitleField, renderItem, reorderer }) {
   const { get, set: setItem, clear: clearCache } = useAdminCache()
   const [items, setItems] = useState(() => {
     if (cacheKey) {
@@ -29,6 +29,7 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [reordering, setReordering] = useState(false)
 
   const loadItems = useCallback(async () => {
     if (cacheKey) {
@@ -124,6 +125,22 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
     setError('')
   }
 
+  const handleReorder = async (newOrder) => {
+    if (!reorderer) return
+    setReordering(true)
+    try {
+      const orderPairs = newOrder.map((item, index) => ({ id: item.id, order: index }))
+      await reorderer(orderPairs)
+      setItems(newOrder)
+      if (cacheKey) setItem(cacheKey, newOrder)
+    } catch (err) {
+      const message = err?.message || 'Failed to reorder items.'
+      setError(message)
+    } finally {
+      setReordering(false)
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -205,6 +222,52 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
 
       {loading ? (
         <SkeletonTable rows={6} cols={3} />
+      ) : reorderer ? (
+        <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="border border-dark-border bg-dark-surface">
+          {items.map((item, index) => (
+            <Reorder.Item
+              key={item.id}
+              value={item}
+              className={`flex items-center justify-between p-4 ${index !== items.length - 1 ? 'border-b border-dark-border' : ''}`}
+            >
+              <div className="flex items-center gap-2 flex-shrink-0 cursor-grab active:cursor-grabbing">
+                <GripVertical size={16} className="text-text-muted" />
+              </div>
+              <div className="flex-1 min-w-0">
+                {renderItem ? renderItem(item, index) : (
+                  <div>
+                    <h3 className="font-semibold text-sm">
+                      {titleField ? item[titleField] : item.name || item.title || item.id}
+                    </h3>
+                    <p className="text-text-muted text-xs font-mono mt-1">
+                      {subtitleField
+                        ? (item[subtitleField] || '')
+                        : (item.company || item.degree || item.category || '')}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <button onClick={() => handleEdit(item)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving}>
+                  <Edit2 size={14} />
+                </button>
+                <button onClick={() => handleDelete(item.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving}>
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </Reorder.Item>
+          ))}
+          {items.length === 0 && (
+            <div className="p-8 text-center text-text-muted text-sm">
+              No items yet. Create your first one.
+            </div>
+          )}
+          {reordering && (
+            <div className="p-3 border-t border-dark-border text-xs text-accent font-mono">
+              Reordering...
+            </div>
+          )}
+        </Reorder.Group>
       ) : (
         <div className="border border-dark-border bg-dark-surface">
           {items.map((item, index) => (

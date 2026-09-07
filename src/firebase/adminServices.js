@@ -5,6 +5,7 @@ import {
   deleteDoc,
   updateDoc,
   doc,
+  writeBatch,
   serverTimestamp,
 } from '@firebase/firestore'
 import { db } from './config'
@@ -22,6 +23,7 @@ export const addProject = async (project) => {
       ...project,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      order: project.order ?? Date.now(),
     }
     const ref = await withTimeoutAndDb(() => addDoc(collection(db, 'projects'), data))
     return ref.id
@@ -100,6 +102,7 @@ export const addExperience = async (exp) => {
       ...exp,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      order: exp.order ?? Date.now(),
     }
     const ref = await withTimeoutAndDb(() => addDoc(collection(db, 'experience'), data))
     return ref.id
@@ -133,6 +136,7 @@ export const addEducation = async (edu) => {
       ...edu,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      order: edu.order ?? Date.now(),
     }
     const ref = await withTimeoutAndDb(() => addDoc(collection(db, 'education'), data))
     return ref.id
@@ -166,6 +170,7 @@ export const addCertificate = async (cert) => {
       ...cert,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      order: cert.order ?? Date.now(),
     }
     const ref = await withTimeoutAndDb(() => addDoc(collection(db, 'certificates'), data))
     return ref.id
@@ -315,6 +320,20 @@ export const deleteContactMessage = async (id) => {
     await withTimeoutAndDb(() => deleteDoc(doc(db, 'contactMessages', id)))
   } catch (err) {
     console.error('deleteContactMessage failed:', err)
+    throw new Error(getUserFriendlyFirebaseError(err))
+  }
+}
+
+export const reorderItems = async (collectionName, orderPairs) => {
+  try {
+    requireDb()
+    const batch = writeBatch(db)
+    orderPairs.forEach(({ id, order }) => {
+      batch.update(doc(db, collectionName, id), { order })
+    })
+    await withTimeout(batch.commit(), 15000)
+  } catch (err) {
+    console.error('reorderItems failed:', err)
     throw new Error(getUserFriendlyFirebaseError(err))
   }
 }

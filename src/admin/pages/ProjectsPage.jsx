@@ -1,6 +1,6 @@
 import GenericCRUD from '../components/GenericCRUD'
 import { getProjects } from '../../firebase/services'
-import { addProject, updateProject, deleteProject } from '../../firebase/adminServices'
+import { addProject, updateProject, deleteProject, reorderItems } from '../../firebase/adminServices'
 
 const fields = [
   { name: 'name', label: 'Project Name', required: true },
@@ -22,6 +22,7 @@ export default function ProjectsPage() {
       adder={addProject}
       updater={updateProject}
       remover={deleteProject}
+      reorderer={(orderPairs) => reorderItems('projects', orderPairs)}
       cacheKey="admin_projects"
       titleField="name"
       subtitleField="description"

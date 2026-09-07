@@ -1,6 +1,6 @@
 import GenericCRUD from '../components/GenericCRUD'
 import { getCertificates } from '../../firebase/services'
-import { addCertificate, updateCertificate, deleteCertificate } from '../../firebase/adminServices'
+import { addCertificate, updateCertificate, deleteCertificate, reorderItems } from '../../firebase/adminServices'
 
 const fields = [
   { name: 'name', label: 'Certificate Name', required: true },
@@ -20,6 +20,7 @@ export default function CertificatesPage() {
       adder={addCertificate}
       updater={updateCertificate}
       remover={deleteCertificate}
+      reorderer={(orderPairs) => reorderItems('certificates', orderPairs)}
       cacheKey="admin_certificates"
       titleField="name"
       subtitleField="issuer"
