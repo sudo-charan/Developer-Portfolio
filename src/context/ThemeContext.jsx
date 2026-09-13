@@ -17,8 +17,11 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      document.documentElement.classList.remove('light', 'dark')
-      document.documentElement.classList.add(theme)
+      const root = document.documentElement
+      root.classList.remove('light', 'dark')
+      root.classList.add(theme)
+      root.setAttribute('data-theme', theme)
+      root.style.colorScheme = theme
       localStorage.setItem('theme', theme)
     } catch {
       // Ignore theme persistence errors

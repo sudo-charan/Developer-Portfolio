@@ -3,11 +3,12 @@ import { Navigate, Outlet, NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, Code, Briefcase, GraduationCap,
   Award, Clock, FileText, MessageSquare, Settings, LogOut,
-  Menu, X
+  Menu, X, Sun, Moon
 } from 'lucide-react'
 import FullPageLoader from '../components/FullPageLoader'
 import { useAdminSession } from './hooks/useAdminSession'
 import { useAdminCache } from './hooks/useAdminCache'
+import { useTheme } from '../hooks/useTheme'
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,6 +26,7 @@ const navItems = [
 export default function AdminLayout() {
   const { user, isAdmin, loading, authError, logout } = useAdminSession()
   const { clear } = useAdminCache()
+  const { theme, toggleTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = async () => {
@@ -87,8 +89,17 @@ export default function AdminLayout() {
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-text-muted" aria-label="Toggle sidebar">
               <Menu size={24} />
             </button>
-            <div className="text-xs text-text-muted font-mono">
-              SESSION: {user?.email || 'unknown'}
+            <div className="flex items-center gap-3 ml-auto">
+              <button
+                onClick={toggleTheme}
+                className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <div className="text-xs text-text-muted font-mono">
+                SESSION: {user?.email || 'unknown'}
+              </div>
             </div>
           </header>
           <div className="p-4 lg:p-8">
