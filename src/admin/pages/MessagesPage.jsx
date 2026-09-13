@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Star, Trash2, MailOpen, Archive,
   AlertCircle, ArrowLeft, Reply
 } from 'lucide-react'
-import { getContactMessages } from '../../firebase/services'
+import { getContactMessages } from '../../firebase/adminServices'
 import {
   updateMessageStatus,
   toggleMessageStar,
@@ -12,7 +12,6 @@ import {
   bulkUpdateMessages,
   deleteContactMessage,
 } from '../../firebase/adminServices'
-import { getUserFriendlyFirebaseError } from '../../firebase/errors'
 import { SkeletonTable } from '../components/Skeletons'
 import { useAdminCache } from '../hooks/useAdminCache'
 
@@ -38,32 +37,42 @@ export default function MessagesPage() {
   const [selectedMessage, setSelectedMessage] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
 
-  const loadMessages = useCallback(async () => {
-    const cached = get(CACHE_KEY)
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      setMessages(cached.data.map(normaliseMessage))
-      setLoading(false)
-      return
+  useEffect(() => {
+    let isMounted = true
+
+    const load = async () => {
+      const cached = get(CACHE_KEY)
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        if (isMounted) {
+          setMessages(cached.data.map(normaliseMessage))
+          setLoading(false)
+        }
+        return
+      }
+      if (isMounted) setLoading(true)
+      if (isMounted) setError('')
+      try {
+        const data = await getContactMessages()
+        if (!isMounted) return
+        const normalised = (Array.isArray(data) ? data : []).map(normaliseMessage)
+        setMessages(normalised)
+        setItem(CACHE_KEY, normalised)
+      } catch (err) {
+        if (!isMounted) return
+        setError(err.message || 'Failed to load messages.')
+        console.error('Failed to load messages:', err)
+        setMessages([])
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
-    setLoading(true)
-    setError('')
-    try {
-      const data = await getContactMessages()
-      const normalised = (Array.isArray(data) ? data : []).map(normaliseMessage)
-      setMessages(normalised)
-      setItem(CACHE_KEY, normalised)
-    } catch (err) {
-      setError(getUserFriendlyFirebaseError(err))
-      console.error('Failed to load messages:', err)
-      setMessages([])
-    } finally {
-      setLoading(false)
+
+    load()
+
+    return () => {
+      isMounted = false
     }
   }, [get, setItem])
-
-  useEffect(() => {
-    loadMessages()
-  }, [loadMessages])
 
   const filteredSorted = useMemo(() => {
     let result = messages

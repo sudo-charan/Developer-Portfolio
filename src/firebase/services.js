@@ -130,22 +130,6 @@ export const getBlogPost = async (id) => {
   return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null
 }
 
-export const getContactMessages = async () => {
-  return withTimeoutAndDb(async () => {
-    const q = query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc'))
-    const snapshot = await getDocs(q)
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-  })
-}
-
-export const getUnreadMessageCount = async () => {
-  return withTimeoutAndDb(async () => {
-    const q = query(collection(db, 'contactMessages'), where('status', '==', 'unread'))
-    const snapshot = await getDocs(q)
-    return snapshot.size
-  })
-}
-
 export const getSettings = async () => {
   const dbInstance = requireDb()
   const docRef = doc(dbInstance, 'settings', 'general')

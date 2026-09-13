@@ -1,24 +1,29 @@
-import { useState, useEffect, useCallback } from 'react'
-import { getUnreadMessageCount } from '../../firebase/services.js'
+import { useState, useEffect } from 'react'
+import { getUnreadMessageCount } from '../../firebase/adminServices.js'
 import { UnreadCountContext } from './UnreadCountContext.js'
 
 export function UnreadCountProvider({ children }) {
   const [count, setCount] = useState(0)
 
-  const fetchCount = useCallback(async () => {
-    try {
-      const result = await getUnreadMessageCount()
-      setCount(result)
-    } catch {
-      // ignore count fetch errors
-    }
-  }, [])
-
   useEffect(() => {
+    let isMounted = true
+
+    const fetchCount = async () => {
+      try {
+        const result = await getUnreadMessageCount()
+        if (isMounted) setCount(result)
+      } catch {
+        // ignore count fetch errors
+      }
+    }
+
     fetchCount()
     const interval = setInterval(fetchCount, 30000)
-    return () => clearInterval(interval)
-  }, [fetchCount])
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [])
 
   return (
     <UnreadCountContext.Provider value={count}>

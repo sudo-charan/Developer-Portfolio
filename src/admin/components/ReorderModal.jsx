@@ -51,8 +51,10 @@ function ReorderItemRow({
       dragElastic={0.1}
       dragMomentum={false}
       dragPropagation={false}
+      dragTransition={DRAG_SPRING}
       whileDrag={ROW_DRAG_WHILE}
-      transition={DRAG_SPRING}
+      layout="position"
+      style={{ touchAction: 'none' }}
       className={`
         flex items-center gap-3 p-4
         hover:bg-dark-bg/50

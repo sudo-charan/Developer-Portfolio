@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit2, Trash2, X, GripVertical } from 'lucide-react'
 import { SkeletonTable } from './Skeletons'
@@ -31,34 +31,57 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [reorderOpen, setReorderOpen] = useState(false)
+  const isMountedRef = useRef(true)
 
-  const loadItems = useCallback(async () => {
+  const fetchItemsData = useCallback(async () => {
     if (cacheKey) {
       const cached = get(cacheKey)
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        setItems(cached.data)
-        setLoading(false)
-        return
+        return { data: cached.data, fromCache: true }
       }
     }
+    return { data: await fetcher(), fromCache: false }
+  }, [fetcher, cacheKey, get])
+
+  const loadItems = useCallback(async () => {
+    if (!isMountedRef.current) return
     setLoading(true)
-    setError('')
     try {
-      const data = await fetcher()
-      setItems(Array.isArray(data) ? data : [])
-      if (cacheKey) setItem(cacheKey, Array.isArray(data) ? data : [])
+      const { data, fromCache } = await fetchItemsData()
+      if (!isMountedRef.current) return
+      const safeData = Array.isArray(data) ? data : []
+      setItems(safeData)
+      if (cacheKey && !fromCache) setItem(cacheKey, safeData)
     } catch (err) {
-      setError('Failed to load data. Please try again.')
-      console.error('Failed to fetch items:', err)
-      setItems([])
+      if (isMountedRef.current) {
+        setError('Failed to load data. Please try again.')
+        console.error('Failed to fetch items:', err)
+        setItems([])
+      }
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) setLoading(false)
     }
-  }, [fetcher, cacheKey, get, setItem])
+  }, [fetchItemsData, cacheKey, setItem])
 
   useEffect(() => {
-    loadItems()
-  }, [loadItems])
+    let isMounted = true
+    fetchItemsData()
+      .then(({ data, fromCache }) => {
+        if (!isMounted) return
+        const safeData = Array.isArray(data) ? data : []
+        setItems(safeData)
+        if (cacheKey && !fromCache) setItem(cacheKey, safeData)
+        setLoading(false)
+      })
+      .catch((err) => {
+        if (!isMounted) return
+        setError('Failed to load data. Please try again.')
+        console.error('Failed to fetch items:', err)
+        setItems([])
+        setLoading(false)
+      })
+    return () => { isMounted = false }
+  }, [fetchItemsData, cacheKey, setItem])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

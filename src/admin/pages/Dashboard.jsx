@@ -4,12 +4,12 @@ import {
   FolderOpen, Code, Briefcase, GraduationCap,
   Award, Clock, FileText, MessageSquare, ExternalLink
 } from 'lucide-react'
-import { getProjects, getSkills, getExperience, getEducation, getCertificates, getCurrentWork, getBlogPosts, getContactMessages } from '../../firebase/services'
+import { getProjects, getSkills, getExperience, getEducation, getCertificates, getCurrentWork, getBlogPosts } from '../../firebase/services'
+import { getContactMessages } from '../../firebase/adminServices'
 import { auth } from '../../firebase/config'
 import { useUnreadMessageCount } from '../hooks/useUnreadMessageCount'
 import { SkeletonCard, Skeleton } from '../components/Skeletons'
 import { useAdminCache } from '../hooks/useAdminCache'
-import SystemStatus from '../components/SystemStatus'
 
 const CACHE_KEY = 'dashboard_counts'
 const CACHE_TTL = 60 * 1000

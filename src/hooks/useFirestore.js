@@ -8,7 +8,6 @@ import {
   getCertificates,
   getCurrentWork,
   getBlogPosts,
-  getContactMessages,
   getSettings,
   getBlogPost,
 } from '../firebase/services'
@@ -25,7 +24,6 @@ const COLLECTION_FETCHERS = {
   certificates: getCertificates,
   currentWork: getCurrentWork,
   blogPosts: null,
-  contactMessages: getContactMessages,
 }
 
 export function useFirestoreCollection(collectionName, options = {}) {

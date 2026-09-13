@@ -6,13 +6,39 @@ import {
   updateDoc,
   doc,
   writeBatch,
+  getDocs,
+  query,
+  orderBy,
+  where,
   serverTimestamp,
 } from '@firebase/firestore'
-import { db } from './config'
+import { getIdTokenResult } from '@firebase/auth'
+import { db, auth } from './config'
 import { withTimeout, getUserFriendlyFirebaseError } from './errors'
 import { requireDb } from './services'
 
+/**
+ * Ensures the current user has a valid Firebase ID token with the `admin`
+ * custom claim. Force-refreshes the token so the Firestore SDK picks up the
+ * latest claims before any admin operation proceeds.
+ *
+ * This closes the gap where AdminSessionContext validates the claim via
+ * getIdTokenResult but the Firestore SDK's internal token cache may lag.
+ */
+async function requireAdminToken() {
+  if (!auth || !auth.currentUser) {
+    throw new Error('No authenticated user. Please sign in.')
+  }
+  const tokenResult = await getIdTokenResult(auth.currentUser, true)
+  const hasAdminClaim = tokenResult.claims?.admin === true
+  if (!hasAdminClaim) {
+    throw new Error('Missing admin claim. Access denied.')
+  }
+  return tokenResult
+}
+
 async function withTimeoutAndDb(operation) {
+  await requireAdminToken()
   requireDb()
   return withTimeout(operation, 15000)
 }
@@ -272,6 +298,32 @@ export const updateSettings = async (data) => {
     await withTimeoutAndDb(() => setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true }))
   } catch (err) {
     console.error('updateSettings failed:', err)
+    throw new Error(getUserFriendlyFirebaseError(err))
+  }
+}
+
+export const getContactMessages = async () => {
+  try {
+    return withTimeoutAndDb(async () => {
+      const q = query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc'))
+      const snapshot = await getDocs(q)
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    })
+  } catch (err) {
+    console.error('getContactMessages failed:', err)
+    throw new Error(getUserFriendlyFirebaseError(err))
+  }
+}
+
+export const getUnreadMessageCount = async () => {
+  try {
+    return withTimeoutAndDb(async () => {
+      const q = query(collection(db, 'contactMessages'), where('status', '==', 'unread'))
+      const snapshot = await getDocs(q)
+      return snapshot.size
+    })
+  } catch (err) {
+    console.error('getUnreadMessageCount failed:', err)
     throw new Error(getUserFriendlyFirebaseError(err))
   }
 }

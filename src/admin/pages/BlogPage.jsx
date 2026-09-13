@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit2, Trash2, X } from 'lucide-react'
 import { getBlogPosts } from '../../firebase/services'
@@ -27,30 +27,55 @@ export default function BlogPage() {
     title: '', content: '', excerpt: '', category: '', tags: '', status: 'draft', readingTime: '', coverImage: ''
   })
   const [saving, setSaving] = useState(false)
+  const isMountedRef = useRef(true)
 
-  const loadPosts = useCallback(async () => {
+  const fetchPostsData = useCallback(async () => {
     const cached = get(CACHE_KEY)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      setPosts(cached.data)
-      setLoading(false)
-      return
+      return { data: cached.data, fromCache: true }
     }
-    setLoading(true)
-    setError('')
-    try {
-      const data = await getBlogPosts('all')
-      setPosts(Array.isArray(data) ? data : [])
-      setItem(CACHE_KEY, Array.isArray(data) ? data : [])
-    } catch (err) {
-      setError('Failed to load blog posts. You may not have permission.')
-      console.error('Failed to load posts:', err)
-      setPosts([])
-    } finally {
-      setLoading(false)
-    }
-  }, [get, setItem])
+    return { data: await getBlogPosts('all'), fromCache: false }
+  }, [get])
 
-  useEffect(() => { loadPosts() }, [loadPosts])
+  const loadPosts = useCallback(async () => {
+    if (!isMountedRef.current) return
+    setLoading(true)
+    try {
+      const { data, fromCache } = await fetchPostsData()
+      if (!isMountedRef.current) return
+      const safeData = Array.isArray(data) ? data : []
+      setPosts(safeData)
+      if (!fromCache) setItem(CACHE_KEY, safeData)
+    } catch (err) {
+      if (isMountedRef.current) {
+        setError('Failed to load blog posts. You may not have permission.')
+        console.error('Failed to load posts:', err)
+        setPosts([])
+      }
+    } finally {
+      if (isMountedRef.current) setLoading(false)
+    }
+  }, [fetchPostsData, setItem])
+
+  useEffect(() => {
+    let isMounted = true
+    fetchPostsData()
+      .then(({ data, fromCache }) => {
+        if (!isMounted) return
+        const safeData = Array.isArray(data) ? data : []
+        setPosts(safeData)
+        if (!fromCache) setItem(CACHE_KEY, safeData)
+        setLoading(false)
+      })
+      .catch((err) => {
+        if (!isMounted) return
+        setError('Failed to load blog posts. You may not have permission.')
+        console.error('Failed to load posts:', err)
+        setPosts([])
+        setLoading(false)
+      })
+    return () => { isMounted = false }
+  }, [fetchPostsData, setItem])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

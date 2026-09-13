@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
 import { db, auth, storage } from '../../firebase/config'
@@ -29,23 +29,31 @@ export default function SystemStatus() {
     website: { status: 'online', value: 'ONLINE' },
   })
 
+  const isMountedRef = useRef(true)
+
   const runChecks = useCallback(async () => {
+    if (!isMountedRef.current) return
     const firebaseStatus = db ? { status: 'online', value: 'INITIALIZED' } : { status: 'error', value: 'NOT INITIALIZED' }
     const authStatus = auth ? { status: 'online', value: 'ACTIVE' } : { status: 'error', value: 'NOT INITIALIZED' }
     const storageStatus = storage ? { status: 'online', value: 'AVAILABLE' } : { status: 'warning', value: 'NOT CONFIGURED (Spark plan)' }
     const firestoreStatus = await checkFirestore()
 
-    setStatus({
-      firebase: firebaseStatus,
-      firestore: firestoreStatus,
-      auth: authStatus,
-      storage: storageStatus,
-      website: { status: 'online', value: 'ONLINE' },
-    })
+    if (isMountedRef.current) {
+      setStatus({
+        firebase: firebaseStatus,
+        firestore: firestoreStatus,
+        auth: authStatus,
+        storage: storageStatus,
+        website: { status: 'online', value: 'ONLINE' },
+      })
+    }
   }, [])
 
   useEffect(() => {
     runChecks()
+    return () => {
+      isMountedRef.current = false
+    }
   }, [runChecks])
 
   return (
