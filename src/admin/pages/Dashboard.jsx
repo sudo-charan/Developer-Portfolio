@@ -158,9 +158,9 @@ export default function AdminDashboardIndex() {
       </div>
 
       {/* System Status */}
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <SystemStatus />
-      </div>
+      </div> */}
       {/* Recent Activity + Messages */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
@@ -186,9 +186,9 @@ export default function AdminDashboardIndex() {
             <p className="text-text-secondary text-sm">
               {unreadCount === 0 ? 'No unread messages' : 'Unread messages'}
             </p>
-                    <div className="mt-4 text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
-                      View messages →
-                    </div>
+            <div className="mt-4 text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
+              View messages →
+            </div>
           </button>
         </div>
       </div>
