@@ -9,12 +9,32 @@ service cloud.firestore {
     // --- projects ---
     match /projects/{document} {
       allow read: if true;
-      allow create, update: if isAdmin()
+      allow create: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'name', 'description', 'github', 'demo', 'image',
-           'tags', 'status', 'featured', 'createdAt', 'updatedAt', 'id', 'order'
-         ])
+         'tags', 'status', 'featured', 'createdAt', 'updatedAt', 'id', 'order'
+       ])
         && request.resource.data.keys().hasAll(['name', 'description'])
+        && (!('name' in request.resource.data) || request.resource.data.name is string)
+        && (!('description' in request.resource.data) || request.resource.data.description is string)
+        && (!('github' in request.resource.data) || request.resource.data.github is string)
+        && (!('demo' in request.resource.data) || request.resource.data.demo is string)
+        && (!('image' in request.resource.data) || request.resource.data.image is string)
+        && (!('tags' in request.resource.data) || request.resource.data.tags is string)
+        && (!('status' in request.resource.data) || request.resource.data.status is string)
+        && (!('featured' in request.resource.data) || request.resource.data.featured is bool)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number);
+      allow update: if isAdmin()
+        // affectedKeys() checks only the fields being written, not the full merged document.
+        // This prevents hasOnly() from rejecting partial updates where the existing document
+        // already contains all its legitimate fields.
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'description', 'github', 'demo', 'image',
+          'tags', 'status', 'featured', 'createdAt', 'updatedAt', 'id', 'order'
+        ])
         && (!('name' in request.resource.data) || request.resource.data.name is string)
         && (!('description' in request.resource.data) || request.resource.data.description is string)
         && (!('github' in request.resource.data) || request.resource.data.github is string)
@@ -33,12 +53,21 @@ service cloud.firestore {
     // --- skills ---
     match /skills/{document} {
       allow read: if true;
-      allow create, update: if isAdmin()
-        && request.resource.data.keys().hasOnly(['name', 'group', 'order', 'id'])
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['name', 'group', 'order', 'updatedAt', 'id'])
         && request.resource.data.keys().hasAll(['name', 'group'])
         && (!('name' in request.resource.data) || request.resource.data.name is string)
         && (!('group' in request.resource.data) || request.resource.data.group is string)
         && (!('order' in request.resource.data) || request.resource.data.order is number)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string);
+      allow update: if isAdmin()
+        // affectedKeys() checks only the fields being written, not the full merged document.
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'group', 'order', 'updatedAt', 'id'])
+        && (!('name' in request.resource.data) || request.resource.data.name is string)
+        && (!('group' in request.resource.data) || request.resource.data.group is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
         && (!('id' in request.resource.data) || request.resource.data.id is string);
       allow delete: if isAdmin();
     }
@@ -46,7 +75,7 @@ service cloud.firestore {
     // --- experience ---
     match /experience/{document} {
       allow read: if true;
-      allow create, update: if isAdmin()
+      allow create: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'title', 'company', 'location', 'startDate', 'endDate',
           'description', 'createdAt', 'updatedAt', 'id', 'order'
@@ -64,20 +93,55 @@ service cloud.firestore {
         && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
         && (!('id' in request.resource.data) || request.resource.data.id is string)
         && (!('order' in request.resource.data) || request.resource.data.order is number);
+      allow update: if isAdmin()
+        // affectedKeys() checks only the fields being written, not the full merged document.
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'company', 'location', 'startDate', 'endDate',
+          'description', 'createdAt', 'updatedAt', 'id', 'order'
+        ])
+        && (!('title' in request.resource.data) || request.resource.data.title is string)
+        && (!('company' in request.resource.data) || request.resource.data.company is string)
+        && (!('location' in request.resource.data) || request.resource.data.location is string)
+        && (!('startDate' in request.resource.data) || request.resource.data.startDate is string)
+        && (!('endDate' in request.resource.data) || request.resource.data.endDate is string)
+        && (!('description' in request.resource.data) || request.resource.data.description is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number);
       allow delete: if isAdmin();
     }
 
     // --- education ---
     match /education/{document} {
       allow read: if true;
-      allow create, update: if isAdmin()
+      allow create: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'degree', 'branch', 'institution', 'location',
           'startYear', 'endYear', 'grade', 'description',
-           'createdAt', 'updatedAt', 'id', 'order'
+         'createdAt', 'updatedAt', 'id', 'order'
         ])
         && request.resource.data.keys().hasAll([
           'degree', 'institution', 'location', 'startYear', 'endYear'
+        ])
+        && (!('degree' in request.resource.data) || request.resource.data.degree is string)
+        && (!('branch' in request.resource.data) || request.resource.data.branch is string)
+        && (!('institution' in request.resource.data) || request.resource.data.institution is string)
+        && (!('location' in request.resource.data) || request.resource.data.location is string)
+        && (!('startYear' in request.resource.data) || request.resource.data.startYear is string)
+        && (!('endYear' in request.resource.data) || request.resource.data.endYear is string)
+        && (!('grade' in request.resource.data) || request.resource.data.grade is string)
+        && (!('description' in request.resource.data) || request.resource.data.description is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number);
+      allow update: if isAdmin()
+        // affectedKeys() checks only the fields being written, not the full merged document.
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'degree', 'branch', 'institution', 'location',
+          'startYear', 'endYear', 'grade', 'description',
+          'createdAt', 'updatedAt', 'id', 'order'
         ])
         && (!('degree' in request.resource.data) || request.resource.data.degree is string)
         && (!('branch' in request.resource.data) || request.resource.data.branch is string)
@@ -97,7 +161,7 @@ service cloud.firestore {
     // --- certificates ---
     match /certificates/{document} {
       allow read: if true;
-      allow create, update: if isAdmin()
+      allow create: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'name', 'issuer', 'year', 'category', 'verifyUrl',
           'image', 'createdAt', 'updatedAt', 'id', 'order'
@@ -115,19 +179,48 @@ service cloud.firestore {
          && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
          && (!('id' in request.resource.data) || request.resource.data.id is string)
          && (!('order' in request.resource.data) || request.resource.data.order is number);
+      allow update: if isAdmin()
+        // affectedKeys() checks only the fields being written, not the full merged document.
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'issuer', 'year', 'category', 'verifyUrl',
+          'image', 'createdAt', 'updatedAt', 'id', 'order'
+        ])
+        && (!('name' in request.resource.data) || request.resource.data.name is string)
+        && (!('issuer' in request.resource.data) || request.resource.data.issuer is string)
+        && (!('year' in request.resource.data) || request.resource.data.year is string)
+        && (!('category' in request.resource.data) || request.resource.data.category is string)
+        && (!('verifyUrl' in request.resource.data) || request.resource.data.verifyUrl is string)
+        && (!('image' in request.resource.data) || request.resource.data.image is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number);
       allow delete: if isAdmin();
     }
 
     // --- currentWork ---
     match /currentWork/{document} {
       allow read: if true;
-      allow create, update: if isAdmin()
+      allow create: if isAdmin()
          && request.resource.data.keys().hasOnly([
            'title', 'description', 'status', 'order',
            'createdAt', 'updatedAt', 'id'
          ])
         && request.resource.data.keys().hasAll([
           'title', 'description', 'status'
+        ])
+        && (!('title' in request.resource.data) || request.resource.data.title is string)
+        && (!('description' in request.resource.data) || request.resource.data.description is string)
+        && (!('status' in request.resource.data) || request.resource.data.status is string)
+        && (!('order' in request.resource.data) || request.resource.data.order is number)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!('id' in request.resource.data) || request.resource.data.id is string);
+      allow update: if isAdmin()
+        // affectedKeys() checks only the fields being written, not the full merged document.
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'description', 'status', 'order',
+          'createdAt', 'updatedAt', 'id'
         ])
         && (!('title' in request.resource.data) || request.resource.data.title is string)
         && (!('description' in request.resource.data) || request.resource.data.description is string)
@@ -170,13 +263,35 @@ service cloud.firestore {
     // --- blogPosts ---
     match /blogPosts/{document} {
       allow read: if resource.data.status == 'published' || isAdmin();
-      allow create, update: if isAdmin()
+      allow create: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'title', 'content', 'excerpt', 'category', 'tags',
           'status', 'readingTime', 'coverImage',
           'publishedAt', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.keys().hasAll(['title', 'content'])
+        && (!('title' in request.resource.data) || request.resource.data.title is string)
+        && (!('content' in request.resource.data) || request.resource.data.content is string)
+        && (!('excerpt' in request.resource.data) || request.resource.data.excerpt is string)
+        && (!('category' in request.resource.data) || request.resource.data.category is string)
+        && (!('tags' in request.resource.data) || request.resource.data.tags is list)
+        && (!('status' in request.resource.data)
+          || request.resource.data.status == 'draft'
+          || request.resource.data.status == 'published')
+        && (!('readingTime' in request.resource.data) || request.resource.data.readingTime is number)
+        && (!('coverImage' in request.resource.data) || request.resource.data.coverImage is string)
+        && (!('publishedAt' in request.resource.data)
+          || request.resource.data.publishedAt is timestamp
+          || request.resource.data.publishedAt is string)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
+      allow update: if isAdmin()
+        // affectedKeys() checks only the fields being written, not the full merged document.
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'content', 'excerpt', 'category', 'tags',
+          'status', 'readingTime', 'coverImage',
+          'publishedAt', 'createdAt', 'updatedAt'
+        ])
         && (!('title' in request.resource.data) || request.resource.data.title is string)
         && (!('content' in request.resource.data) || request.resource.data.content is string)
         && (!('excerpt' in request.resource.data) || request.resource.data.excerpt is string)
@@ -215,7 +330,8 @@ service cloud.firestore {
 
       allow read: if isAdmin();
       allow update: if isAdmin()
-        && request.resource.data.keys().hasOnly([
+        // affectedKeys() checks only the fields being written, not the full merged document.
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'name', 'email', 'subject', 'message',
           'createdAt', 'status', 'isStarred', 'isArchived'
         ])

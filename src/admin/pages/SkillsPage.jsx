@@ -4,7 +4,7 @@ import { addSkill, updateSkill, deleteSkill, reorderItems } from '../../firebase
 
 const fields = [
   { name: 'name', label: 'Skill Name', required: true },
-  { name: 'group', label: 'Group', required: true },
+  { name: 'group', label: 'Category', required: true },
 ]
 
 export default function SkillsPage() {
@@ -19,7 +19,7 @@ export default function SkillsPage() {
       reorderer={(orderPairs) => reorderItems('skills', orderPairs)}
       cacheKey="admin_skills"
       titleField="name"
-      subtitleField="group"
+      groupBy="group"
     />
   )
 }

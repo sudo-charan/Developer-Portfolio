@@ -378,13 +378,25 @@ export const deleteContactMessage = async (id) => {
 
 export const reorderItems = async (collectionName, orderPairs) => {
   try {
+    // --- Diagnostic: verify token and auth state before write ---
+    const tokenResult = await requireAdminToken()
+    console.debug('[reorderItems] auth.currentUser uid:', auth?.currentUser?.uid)
+    console.debug('[reorderItems] auth.currentUser email:', auth?.currentUser?.email)
+    console.debug('[reorderItems] admin claim:', tokenResult?.claims?.admin)
+    console.debug('[reorderItems] admin === true:', tokenResult?.claims?.admin === true)
+    console.debug('[reorderItems] collection:', collectionName)
+    console.debug('[reorderItems] writing doc IDs:', orderPairs.map((p) => p.id))
+    console.debug('[reorderItems] fields written per doc: { order: <number> }')
+    console.debug('[reorderItems] Firebase app name:', db?.app?.name ?? 'unknown')
+    // ---
     requireDb()
     const batch = writeBatch(db)
+    // Write only `order` — the minimal field needed for reordering.
+    // `updatedAt` is intentionally omitted: it is not required for ordering
+    // to work and its presence risks hitting hasOnly() field-list mismatches
+    // in Firestore rules when the existing document contains unexpected fields.
     orderPairs.forEach(({ id, order }) => {
-      batch.update(doc(db, collectionName, id), {
-        order,
-        updatedAt: serverTimestamp(),
-      })
+      batch.update(doc(db, collectionName, id), { order })
     })
     await withTimeout(batch.commit(), 15000)
   } catch (err) {

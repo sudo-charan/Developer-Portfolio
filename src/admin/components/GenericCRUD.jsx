@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit2, Trash2, X, GripVertical } from 'lucide-react'
 import { SkeletonTable } from './Skeletons'
@@ -7,7 +7,7 @@ import ReorderModal from './ReorderModal'
 
 const CACHE_TTL = 60 * 1000
 
-export default function GenericCRUD({ title, fields, fetcher, adder, updater, remover, cacheKey, titleField, subtitleField, renderItem, reorderer }) {
+export default function GenericCRUD({ title, fields, fetcher, adder, updater, remover, cacheKey, titleField, subtitleField, renderItem, reorderer, groupBy }) {
   const { get, set: setItem, clear: clearCache } = useAdminCache()
   const [items, setItems] = useState(() => {
     if (cacheKey) {
@@ -31,7 +31,42 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [reorderOpen, setReorderOpen] = useState(false)
+  const [filter, setFilter] = useState('all')
   const isMountedRef = useRef(true)
+
+  const categories = useMemo(() => {
+    if (!groupBy) return []
+    const seen = new Set()
+    const ordered = []
+    items.forEach((item) => {
+      const cat = item[groupBy] || 'Uncategorized'
+      if (!seen.has(cat)) {
+        seen.add(cat)
+        ordered.push(cat)
+      }
+    })
+    return ordered
+  }, [items, groupBy])
+
+  const filteredItems = useMemo(() => {
+    if (!groupBy || filter === 'all') return items
+    return items.filter((item) => (item[groupBy] || 'Uncategorized') === filter)
+  }, [items, groupBy, filter])
+
+  const groupedItems = useMemo(() => {
+    if (!groupBy || filter !== 'all') return null
+    const groups = []
+    const seen = new Map()
+    filteredItems.forEach((item) => {
+      const cat = item[groupBy] || 'Uncategorized'
+      if (!seen.has(cat)) {
+        seen.set(cat, groups.length)
+        groups.push({ category: cat, items: [] })
+      }
+      groups[seen.get(cat)].items.push(item)
+    })
+    return groups
+  }, [filteredItems, groupBy, filter])
 
   const fetchItemsData = useCallback(async () => {
     if (cacheKey) {
@@ -199,6 +234,28 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
         </div>
       </div>
 
+      {groupBy && categories.length > 0 && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-3 py-1.5 text-xs font-mono border transition-colors ${filter === 'all' ? 'border-accent text-accent bg-accent/5' : 'border-dark-border text-text-muted hover:text-text-primary hover:border-accent/30'}`}
+            aria-label="Show all categories"
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setFilter(cat)}
+              className={`px-3 py-1.5 text-xs font-mono border transition-colors ${filter === cat ? 'border-accent text-accent bg-accent/5' : 'border-dark-border text-text-muted hover:text-text-primary hover:border-accent/30'}`}
+              aria-label={`Filter by ${cat}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
+
       {error && (
         <div role="alert" className="mb-6 p-3 border border-accent-2/30 bg-accent-2/5 text-accent-2 text-sm">
           {error}
@@ -241,14 +298,36 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
                       />
                       Enabled
                     </label>
-                  ) : (
-                    <input
-                      type={field.type || 'text'}
+                  ) : field.type === 'select' ? (
+                    <select
                       value={formData[field.name] || ''}
                       onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
                       className="w-full px-4 py-2 bg-dark-bg border border-dark-border text-text-primary focus:outline-none focus:border-accent transition-colors"
                       required={field.required}
-                    />
+                    >
+                      <option value="">Choose...</option>
+                      {field.options.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div>
+                      <input
+                        type={field.type || 'text'}
+                        value={formData[field.name] || ''}
+                        onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+                        className="w-full px-4 py-2 bg-dark-bg border border-dark-border text-text-primary focus:outline-none focus:border-accent transition-colors"
+                        required={field.required}
+                        list={groupBy === field.name ? `${field.name}-list` : undefined}
+                      />
+                      {groupBy === field.name && categories.length > 0 && (
+                        <datalist id={`${field.name}-list`}>
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat} />
+                          ))}
+                        </datalist>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
@@ -267,35 +346,76 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
 
       {loading ? (
         <SkeletonTable rows={6} cols={3} />
+      ) : groupedItems ? (
+        <div className="border border-dark-border bg-dark-surface">
+          {groupedItems.map((group) => (
+            <div key={group.category}>
+              <div className="px-4 py-2 border-b border-dark-border bg-dark-bg/30">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted font-mono">
+                  {group.category}
+                  <span className="text-text-muted/60 font-normal normal-case"> ({group.items.length})</span>
+                </h3>
+              </div>
+              {group.items.map((item, _itemIndex) => {
+                const globalIndex = filteredItems.indexOf(item)
+                const isLast = globalIndex === filteredItems.length - 1
+                return (
+                  <div key={item.id} className={`flex items-center justify-between p-4 ${!isLast ? 'border-b border-dark-border' : ''}`}>
+                    <div className="flex-1 min-w-0">
+                      {renderItem ? renderItem(item, globalIndex) : (
+                        <h3 className="font-semibold text-sm truncate">
+                          {titleField ? item[titleField] : item.name || item.title || item.id}
+                        </h3>
+                      )}
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button onClick={() => handleEdit(item)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label={`Edit ${item[titleField] || item.name || item.title || item.id}`}>
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => handleDelete(item.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving} aria-label={`Delete ${item[titleField] || item.name || item.title || item.id}`}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+          {filteredItems.length === 0 && (
+            <div className="p-8 text-center text-text-muted text-sm">
+              No items in this category. Create your first one.
+            </div>
+          )}
+        </div>
       ) : (
         <div className="border border-dark-border bg-dark-surface">
-          {items.map((item, index) => (
-            <div key={item.id} className={`flex items-center justify-between p-4 ${index !== items.length - 1 ? 'border-b border-dark-border' : ''}`}>
+          {filteredItems.map((item, index) => (
+            <div key={item.id} className={`flex items-center justify-between p-4 ${index !== filteredItems.length - 1 ? 'border-b border-dark-border' : ''}`}>
               <div className="flex-1 min-w-0">
                 {renderItem ? renderItem(item, index) : (
                   <div>
                     <h3 className="font-semibold text-sm">
                       {titleField ? item[titleField] : item.name || item.title || item.id}
                     </h3>
-                    <p className="text-text-muted text-xs font-mono mt-1">
-                      {subtitleField
-                        ? (item[subtitleField] || '')
-                        : (item.company || item.degree || item.category || '')}
-                    </p>
+                    {subtitleField && (
+                      <p className="text-text-muted text-xs font-mono mt-1">
+                        {item[subtitleField] || ''}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <button onClick={() => handleEdit(item)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label={`Edit item`}>
+                <button onClick={() => handleEdit(item)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label={`Edit ${item[titleField] || item.name || item.title || item.id}`}>
                   <Edit2 size={14} />
                 </button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving} aria-label={`Delete item`}>
+                <button onClick={() => handleDelete(item.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving} aria-label={`Delete ${item[titleField] || item.name || item.title || item.id}`}>
                   <Trash2 size={14} />
                 </button>
               </div>
             </div>
           ))}
-          {items.length === 0 && (
+          {filteredItems.length === 0 && (
             <div className="p-8 text-center text-text-muted text-sm">
               No items yet. Create your first one.
             </div>
@@ -313,6 +433,7 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
           titleField={titleField}
           subtitleField={subtitleField}
           renderItem={renderItem}
+          groupField={groupBy}
         />
       )}
     </div>
