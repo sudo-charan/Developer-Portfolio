@@ -27,12 +27,12 @@ const normaliseMessage = (msg) => ({
 })
 
 export default function MessagesPage() {
-  const { get, set: setItem, clear: clearCache } = useAdminCache()
+  const { get, set: setItem } = useAdminCache()
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState('inbox')
   const [sort, setSort] = useState('newest')
   const [selectedIds, setSelectedIds] = useState([])
   const [selectedMessage, setSelectedMessage] = useState(null)
@@ -114,7 +114,6 @@ export default function MessagesPage() {
       )
       setMessages(updated)
       setItem(CACHE_KEY, updated)
-      clearCache(CACHE_KEY)
       if (selectedMessage?.id === msg.id) {
         setSelectedMessage({ ...msg, isRead: !msg.isRead, status: newStatus })
       }
@@ -135,7 +134,6 @@ export default function MessagesPage() {
       )
       setMessages(updated)
       setItem(CACHE_KEY, updated)
-      clearCache(CACHE_KEY)
       if (selectedMessage?.id === msg.id) {
         setSelectedMessage({ ...msg, isStarred: !msg.isStarred })
       }
@@ -156,7 +154,6 @@ export default function MessagesPage() {
       )
       setMessages(updated)
       setItem(CACHE_KEY, updated)
-      clearCache(CACHE_KEY)
       setSelectedMessage(null)
     } catch (err) {
       console.error('Failed to toggle archive:', err)
@@ -174,7 +171,6 @@ export default function MessagesPage() {
       const updated = messages.filter((m) => m.id !== msg.id)
       setMessages(updated)
       setItem(CACHE_KEY, updated)
-      clearCache(CACHE_KEY)
       if (selectedMessage?.id === msg.id) setSelectedMessage(null)
       setSelectedIds(selectedIds.filter((id) => id !== msg.id))
     } catch (err) {
@@ -193,7 +189,6 @@ export default function MessagesPage() {
       )
       setMessages(updated)
       setItem(CACHE_KEY, updated)
-      clearCache(CACHE_KEY)
       setSelectedIds([])
     } catch (err) {
       console.error('Failed to mark messages as read:', err)
@@ -211,7 +206,6 @@ export default function MessagesPage() {
       )
       setMessages(updated)
       setItem(CACHE_KEY, updated)
-      clearCache(CACHE_KEY)
       setSelectedIds([])
     } catch (err) {
       console.error('Failed to mark messages as unread:', err)
@@ -229,7 +223,6 @@ export default function MessagesPage() {
       )
       setMessages(updated)
       setItem(CACHE_KEY, updated)
-      clearCache(CACHE_KEY)
       setSelectedIds([])
     } catch (err) {
       console.error('Failed to archive messages:', err)
@@ -243,11 +236,10 @@ export default function MessagesPage() {
     if (!confirmed) return
     setActionLoading(true)
     try {
-      await bulkUpdateMessages(selectedIds, { status: 'deleted' })
+      await Promise.all(selectedIds.map((id) => deleteContactMessage(id)))
       const updated = messages.filter((m) => !selectedIds.includes(m.id))
       setMessages(updated)
       setItem(CACHE_KEY, updated)
-      clearCache(CACHE_KEY)
       setSelectedIds([])
     } catch (err) {
       console.error('Failed to bulk delete:', err)
@@ -297,14 +289,18 @@ export default function MessagesPage() {
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
+              id="message-search"
               type="text"
               placeholder="Search messages..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-dark-bg border border-dark-border text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-accent"
+              aria-label="Search messages"
             />
           </div>
+          <label htmlFor="message-sort" className="sr-only">Sort messages</label>
           <select
+            id="message-sort"
             value={sort}
             onChange={(e) => setSort(e.target.value)}
             className="px-3 py-2 bg-dark-bg border border-dark-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"

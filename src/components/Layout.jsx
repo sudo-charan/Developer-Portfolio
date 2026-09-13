@@ -35,8 +35,8 @@ export default memo(function Layout() {
         }
       }
     }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll, { passive: true })
   }, [])
 
   const scrollTo = (href) => {
@@ -143,6 +143,7 @@ export default memo(function Layout() {
                 onClick={() => setMobileOpen(!mobileOpen)}
                 className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
                 aria-label="Toggle menu"
+                aria-expanded={mobileOpen}
               >
                 {mobileOpen ? <X size={24} /> : <Menu size={24} />}
               </button>

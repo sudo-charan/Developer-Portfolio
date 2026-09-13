@@ -28,7 +28,9 @@ export default function StatusIndicator({ status = 'loading', label, value, size
         <span
           className={indicatorStyles[status]}
           style={{
-            animation: status !== 'loading' ? 'pulse 2s ease-in-out infinite' : undefined,
+              animation: status === 'online' || status === 'warning'
+                ? 'pulse-glow 2s ease-in-out infinite'
+                : undefined,
           }}
         />
         <span className="text-xs text-text-secondary font-mono">{label}</span>

@@ -223,7 +223,7 @@ export default function BackgroundFX() {
               width: '6px',
               height: '6px',
               background: 'radial-gradient(circle, rgba(249,115,22,0.30) 0%, transparent 70%)',
-              animation: `pulse 3s ease-in-out infinite`,
+              animation: `pulse-glow 3s ease-in-out infinite`,
               animationDelay: n.pulseDelay,
             }}
           />

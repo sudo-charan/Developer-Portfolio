@@ -10,21 +10,23 @@ const CACHE_TTL = 60 * 1000
 
 export default function SettingsPage() {
   const { get, set: setItem, clear: clearCache } = useAdminCache()
-  const [settings, setSettings] = useState({
-    hero: {},
-    about: {},
-    socialLinks: {},
-    resumeUrl: '',
+  const [settings, setSettings] = useState(() => {
+    const cached = get(CACHE_KEY)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data
+    }
+    return { hero: {}, about: {}, socialLinks: {}, resumeUrl: '' }
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    const cached = get(CACHE_KEY)
+    return !cached || Date.now() - cached.timestamp >= CACHE_TTL
+  })
 
   useEffect(() => {
     const cached = get(CACHE_KEY)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      setSettings(cached.data)
-      setLoading(false)
       return
     }
     getSettings().then((data) => {

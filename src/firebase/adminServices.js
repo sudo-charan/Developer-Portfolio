@@ -70,7 +70,7 @@ export const addSkill = async (skill) => {
 
 export const updateSkill = async (id, data) => {
   try {
-    await withTimeoutAndDb(() => updateDoc(doc(db, 'skills', id), data))
+    await withTimeoutAndDb(() => updateDoc(doc(db, 'skills', id), { ...data, updatedAt: serverTimestamp() }))
   } catch (err) {
     console.error('[Firebase CRUD] updateSkill failed', {
       collection: 'skills',
@@ -114,7 +114,7 @@ export const addExperience = async (exp) => {
 
 export const updateExperience = async (id, data) => {
   try {
-    await withTimeoutAndDb(() => updateDoc(doc(db, 'experience', id), data))
+    await withTimeoutAndDb(() => updateDoc(doc(db, 'experience', id), { ...data, updatedAt: serverTimestamp() }))
   } catch (err) {
     console.error('updateExperience failed:', err)
     throw new Error(getUserFriendlyFirebaseError(err))
@@ -148,7 +148,7 @@ export const addEducation = async (edu) => {
 
 export const updateEducation = async (id, data) => {
   try {
-    await withTimeoutAndDb(() => updateDoc(doc(db, 'education', id), data))
+    await withTimeoutAndDb(() => updateDoc(doc(db, 'education', id), { ...data, updatedAt: serverTimestamp() }))
   } catch (err) {
     console.error('updateEducation failed:', err)
     throw new Error(getUserFriendlyFirebaseError(err))
@@ -182,7 +182,7 @@ export const addCertificate = async (cert) => {
 
 export const updateCertificate = async (id, data) => {
   try {
-    await withTimeoutAndDb(() => updateDoc(doc(db, 'certificates', id), data))
+    await withTimeoutAndDb(() => updateDoc(doc(db, 'certificates', id), { ...data, updatedAt: serverTimestamp() }))
   } catch (err) {
     console.error('updateCertificate failed:', err)
     throw new Error(getUserFriendlyFirebaseError(err))
@@ -329,7 +329,10 @@ export const reorderItems = async (collectionName, orderPairs) => {
     requireDb()
     const batch = writeBatch(db)
     orderPairs.forEach(({ id, order }) => {
-      batch.update(doc(db, collectionName, id), { order })
+      batch.update(doc(db, collectionName, id), {
+        order,
+        updatedAt: serverTimestamp(),
+      })
     })
     await withTimeout(batch.commit(), 15000)
   } catch (err) {

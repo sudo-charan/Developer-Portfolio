@@ -84,11 +84,11 @@ export default function AdminLayout() {
 
         <main className="flex-1 lg:ml-64">
           <header className="sticky top-0 z-20 bg-dark-bg/90 backdrop-blur border-b border-dark-border h-16 flex items-center justify-between px-4 lg:px-8">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-text-muted">
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-text-muted" aria-label="Toggle sidebar">
               <Menu size={24} />
             </button>
             <div className="text-xs text-text-muted font-mono">
-              SESSION: {user.email}
+              SESSION: {user?.email || 'unknown'}
             </div>
           </header>
           <div className="p-4 lg:p-8">

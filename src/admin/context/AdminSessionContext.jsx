@@ -11,7 +11,7 @@ const TOKEN_REVALIDATE_INTERVAL_MS = 60 * 60 * 1000
 export function AdminSessionProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(auth ? true : false)
   const [authError, setAuthError] = useState('')
   const navigate = useNavigate()
 
@@ -23,7 +23,9 @@ export function AdminSessionProvider({ children }) {
   const isAdminRef = useRef(false)
   const currentUserRef = useRef(null)
 
-  isAdminRef.current = isAdmin
+  useEffect(() => {
+    isAdminRef.current = isAdmin
+  }, [isAdmin])
 
   const clearInactivityTimer = useCallback(() => {
     if (inactivityTimerRef.current) {
@@ -143,9 +145,8 @@ export function AdminSessionProvider({ children }) {
   }, [])
 
   useEffect(() => {
+    const cleanupCallbacks = cleanupCallbacksRef.current
     if (!auth) {
-      setLoading(false)
-      setIsAdmin(false)
       return
     }
 
@@ -157,6 +158,10 @@ export function AdminSessionProvider({ children }) {
       const admin = await validateAdmin(firebaseUser)
 
       if (admin && firebaseUser) {
+        if (tokenCheckIntervalRef.current) {
+          clearInterval(tokenCheckIntervalRef.current)
+          tokenCheckIntervalRef.current = null
+        }
         subscribeActivity()
         handleActivity()
 
@@ -195,7 +200,7 @@ export function AdminSessionProvider({ children }) {
         clearInterval(tokenCheckIntervalRef.current)
         tokenCheckIntervalRef.current = null
       }
-      cleanupCallbacksRef.current.clear()
+      cleanupCallbacks.clear()
     }
   }, [validateAdmin, subscribeActivity, handleActivity, unsubscribeActivity, clearInactivityTimer])
 

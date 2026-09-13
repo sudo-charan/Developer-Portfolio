@@ -8,37 +8,22 @@ import { useAdminSession } from './hooks/useAdminSession'
 import FullPageLoader from '../components/FullPageLoader'
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [checking, setChecking] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(
+    auth ? (location.state?.message || '') : 'Firebase is not configured. Please add your Firebase config to .env'
+  )
+  const [loading, setLoading] = useState(false)
 
   const { user, isAdmin, loading: sessionLoading } = useAdminSession()
+  const checking = sessionLoading && !!auth
 
   useEffect(() => {
-    if (location.state?.message) {
-      setError(location.state.message)
-    }
-  }, [location.state])
-
-  useEffect(() => {
-    if (sessionLoading) return
-    if (!auth) {
-      setChecking(false)
-      setError('Firebase is not configured. Please add your Firebase config to .env')
-      return
-    }
-    if (!user) {
-      setChecking(false)
-      return
-    }
-    if (isAdmin) {
+    if (sessionLoading || !auth) return
+    if (user && isAdmin) {
       navigate('/admin', { replace: true })
-    } else {
-      setChecking(false)
     }
   }, [sessionLoading, user, isAdmin, navigate])
 

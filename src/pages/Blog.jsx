@@ -44,10 +44,13 @@ export default function Blog() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search posts..."
+              aria-label="Search blog posts"
               className="w-full pl-10 pr-4 py-3 bg-dark-surface border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
             />
           </div>
+          <label htmlFor="category-filter" className="sr-only">Filter by category</label>
           <select
+            id="category-filter"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-4 py-3 bg-dark-surface border border-dark-border text-text-primary focus:outline-none focus:border-accent transition-colors"

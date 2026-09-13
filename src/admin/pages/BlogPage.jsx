@@ -62,9 +62,10 @@ export default function BlogPage() {
         content: formData.content,
         excerpt: formData.excerpt,
         category: formData.category,
-        tags: formData.tags.split(',').map(t => t.trim()),
+        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
         status: formData.status,
         readingTime: parseInt(formData.readingTime) || 5,
+        coverImage: formData.coverImage || '',
       }
       if (editing) {
         await updateBlogPost(editing, data)
@@ -231,11 +232,11 @@ export default function BlogPage() {
                 <p className="text-text-muted text-xs font-mono mt-1">{post.category} • {post.status}</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleEdit(post)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving}><Edit2 size={14} /></button>
+                <button onClick={() => handleEdit(post)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label="Edit post"><Edit2 size={14} /></button>
                 {post.status === 'draft' ? (
-                  <button onClick={() => handlePublish(post)} className="p-2 border border-accent/30 hover:border-accent hover:text-accent transition-colors" disabled={saving} title="Publish">✓</button>
+                  <button onClick={() => handlePublish(post)} className="p-2 border border-accent/30 hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label="Publish post">✓</button>
                 ) : (
-                  <button onClick={() => handleUnpublish(post)} className="p-2 border border-dark-border hover:border-text-muted hover:text-text-muted transition-colors" disabled={saving} title="Unpublish">✗</button>
+                  <button onClick={() => handleUnpublish(post)} className="p-2 border border-dark-border hover:border-text-muted hover:text-text-muted transition-colors" disabled={saving} aria-label="Unpublish post">✗</button>
                 )}
                 <button onClick={() => handleDelete(post.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving}><Trash2 size={14} /></button>
               </div>

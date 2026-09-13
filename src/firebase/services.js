@@ -154,10 +154,12 @@ export const getSettings = async () => {
 }
 
 export const submitContactMessage = async (data) => {
-  const dbInstance = requireDb()
-  return addDoc(collection(dbInstance, 'contactMessages'), {
-    ...data,
-    createdAt: serverTimestamp(),
-    status: 'unread',
+  return withTimeoutAndDb(() => {
+    const dbInstance = requireDb()
+    return addDoc(collection(dbInstance, 'contactMessages'), {
+      ...data,
+      createdAt: serverTimestamp(),
+      status: 'unread',
+    })
   })
 }

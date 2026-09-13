@@ -41,8 +41,12 @@ export function useFirestoreCollection(collectionName, options = {}) {
   const fetcherRef = useRef(fetcher)
   const deferRef = useRef(deferMs)
 
-  if (fetcherRef.current !== fetcher) fetcherRef.current = fetcher
-  if (deferRef.current !== deferMs) deferRef.current = deferMs
+  useEffect(() => {
+    fetcherRef.current = fetcher
+  }, [fetcher])
+  useEffect(() => {
+    deferRef.current = deferMs
+  }, [deferMs])
 
   const load = useCallback(async () => {
     if (!mountedRef.current) return
@@ -110,37 +114,42 @@ export function useFirestoreDoc(fetcher) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [retryCount, setRetryCount] = useState(0)
-  const timerRef = useRef(null)
   const mountedRef = useRef(true)
   const fetcherRef = useRef(fetcher)
+  const requestIdRef = useRef(0)
+  const timerRef = useRef(null)
 
-  if (fetcherRef.current !== fetcher) fetcherRef.current = fetcher
+  
+
+  useEffect(() => {
+    fetcherRef.current = fetcher
+  }, [fetcher])
 
   const load = useCallback(async () => {
     if (!mountedRef.current) return
+    const requestId = ++requestIdRef.current
     setLoading(true)
     setError(null)
 
     timerRef.current = setTimeout(() => {
-      if (mountedRef.current) {
+      if (mountedRef.current && requestId === requestIdRef.current) {
         setLoading(false)
       }
     }, FALLBACK_DELAY)
 
     try {
       const result = await fetcherRef.current()
-      if (mountedRef.current) {
-        clearTimeout(timerRef.current)
-        setData(result)
-        setLoading(false)
-        setRetryCount(0)
-      }
+      const isStale = requestId !== requestIdRef.current
+      if (!mountedRef.current || isStale) return
+      clearTimeout(timerRef.current)
+      setData(result)
+      setLoading(false)
+      setRetryCount(0)
     } catch (err) {
-      if (mountedRef.current) {
-        clearTimeout(timerRef.current)
-        setError(err)
-        setLoading(false)
-      }
+      if (!mountedRef.current || requestId !== requestIdRef.current) return
+      clearTimeout(timerRef.current)
+      setError(err)
+      setLoading(false)
     }
   }, [])
 
@@ -150,9 +159,10 @@ export function useFirestoreDoc(fetcher) {
 
     return () => {
       mountedRef.current = false
+      requestIdRef.current += 1
       clearTimeout(timerRef.current)
     }
-  }, [load])
+  }, [load, fetcher])
 
   const retry = useCallback(() => {
     setRetryCount((c) => c + 1)

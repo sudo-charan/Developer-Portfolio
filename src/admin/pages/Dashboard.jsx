@@ -27,21 +27,32 @@ const stats = [
 
 export default function AdminDashboardIndex() {
   const { get, set: setItem } = useAdminCache()
-  const [counts, setCounts] = useState({})
-  const [loading, setLoading] = useState(true)
-  const [updatedAt, setUpdatedAt] = useState(null)
+  const [counts, setCounts] = useState(() => {
+    const cached = get(CACHE_KEY)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data
+    }
+    return {}
+  })
+  const [loading, setLoading] = useState(() => {
+    const cached = get(CACHE_KEY)
+    return !cached || Date.now() - cached.timestamp >= CACHE_TTL
+  })
+  const [updatedAt, setUpdatedAt] = useState(() => {
+    const cached = get(CACHE_KEY)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.timestamp
+    }
+    return null
+  })
   const unreadCount = useUnreadMessageCount()
   const navigate = useNavigate()
 
   useEffect(() => {
     const cached = get(CACHE_KEY)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      setCounts(cached.data)
-      setUpdatedAt(cached.timestamp)
-      setLoading(false)
       return
     }
-
     const loadCounts = async () => {
       try {
         const results = await Promise.allSettled([
@@ -146,7 +157,6 @@ export default function AdminDashboardIndex() {
         </div>
       </div>
 
-      {/* System Status */}
       {/* System Status */}
       <div className="mb-8">
         <SystemStatus />

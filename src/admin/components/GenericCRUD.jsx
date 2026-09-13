@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence, Reorder } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit2, Trash2, X, GripVertical } from 'lucide-react'
 import { SkeletonTable } from './Skeletons'
 import { useAdminCache } from '../hooks/useAdminCache'
+import ReorderModal from './ReorderModal'
 
 const CACHE_TTL = 60 * 1000
 
@@ -29,7 +30,7 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
-  const [reordering, setReordering] = useState(false)
+  const [reorderOpen, setReorderOpen] = useState(false)
 
   const loadItems = useCallback(async () => {
     if (cacheKey) {
@@ -64,10 +65,18 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
     setError('')
     setSaving(true)
     try {
+      const payload = {}
+      fields.forEach((field) => {
+        if (field.type === 'checkbox') {
+          payload[field.name] = !!formData[field.name]
+        } else if (formData[field.name] !== undefined) {
+          payload[field.name] = formData[field.name]
+        }
+      })
       if (editing) {
-        await updater(editing, formData)
+        await updater(editing, payload)
       } else {
-        await adder(formData)
+        await adder(payload)
       }
       if (cacheKey) clearCache(cacheKey)
       setShowForm(false)
@@ -90,7 +99,11 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
 
   const handleEdit = (item) => {
     setEditing(item.id)
-    setFormData(item)
+    const next = {}
+    fields.forEach((field) => {
+      next[field.name] = item[field.name]
+    })
+    setFormData(next)
     setShowForm(true)
     setError('')
   }
@@ -125,19 +138,16 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
     setError('')
   }
 
-  const handleReorder = async (newOrder) => {
+  const handleReorderSave = async (reorderedItems) => {
     if (!reorderer) return
-    setReordering(true)
     try {
-      const orderPairs = newOrder.map((item, index) => ({ id: item.id, order: index }))
+      const orderPairs = reorderedItems.map((item, index) => ({ id: item.id, order: index }))
       await reorderer(orderPairs)
-      setItems(newOrder)
-      if (cacheKey) setItem(cacheKey, newOrder)
+      setItems(reorderedItems)
+      if (cacheKey) setItem(cacheKey, reorderedItems)
     } catch (err) {
       const message = err?.message || 'Failed to reorder items.'
-      setError(message)
-    } finally {
-      setReordering(false)
+      throw new Error(message)
     }
   }
 
@@ -145,17 +155,29 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold font-mono">{title.toUpperCase()}</h1>
-        <button
-          onClick={() => { resetForm(); setShowForm(true); }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={18} />
-          Add New
-        </button>
+        <div className="flex gap-3">
+          {reorderer && (
+            <button
+              onClick={() => setReorderOpen(true)}
+              className="btn-secondary flex items-center gap-2"
+              aria-label={`Reorder ${title}`}
+            >
+              <GripVertical size={18} />
+              Reorder
+            </button>
+          )}
+          <button
+            onClick={() => { resetForm(); setShowForm(true); }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={18} />
+            Add New
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-6 p-3 border border-accent-2/30 bg-accent-2/5 text-accent-2 text-sm">
+        <div role="alert" className="mb-6 p-3 border border-accent-2/30 bg-accent-2/5 text-accent-2 text-sm">
           {error}
         </div>
       )}
@@ -222,52 +244,6 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
 
       {loading ? (
         <SkeletonTable rows={6} cols={3} />
-      ) : reorderer ? (
-        <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="border border-dark-border bg-dark-surface">
-          {items.map((item, index) => (
-            <Reorder.Item
-              key={item.id}
-              value={item}
-              className={`flex items-center justify-between p-4 ${index !== items.length - 1 ? 'border-b border-dark-border' : ''}`}
-            >
-              <div className="flex items-center gap-2 flex-shrink-0 cursor-grab active:cursor-grabbing">
-                <GripVertical size={16} className="text-text-muted" />
-              </div>
-              <div className="flex-1 min-w-0">
-                {renderItem ? renderItem(item, index) : (
-                  <div>
-                    <h3 className="font-semibold text-sm">
-                      {titleField ? item[titleField] : item.name || item.title || item.id}
-                    </h3>
-                    <p className="text-text-muted text-xs font-mono mt-1">
-                      {subtitleField
-                        ? (item[subtitleField] || '')
-                        : (item.company || item.degree || item.category || '')}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <button onClick={() => handleEdit(item)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving}>
-                  <Edit2 size={14} />
-                </button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving}>
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </Reorder.Item>
-          ))}
-          {items.length === 0 && (
-            <div className="p-8 text-center text-text-muted text-sm">
-              No items yet. Create your first one.
-            </div>
-          )}
-          {reordering && (
-            <div className="p-3 border-t border-dark-border text-xs text-accent font-mono">
-              Reordering...
-            </div>
-          )}
-        </Reorder.Group>
       ) : (
         <div className="border border-dark-border bg-dark-surface">
           {items.map((item, index) => (
@@ -287,10 +263,10 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
                 )}
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <button onClick={() => handleEdit(item)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving}>
+                <button onClick={() => handleEdit(item)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label={`Edit item`}>
                   <Edit2 size={14} />
                 </button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving}>
+                <button onClick={() => handleDelete(item.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving} aria-label={`Delete item`}>
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -302,6 +278,19 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
             </div>
           )}
         </div>
+      )}
+
+      {reorderer && (
+        <ReorderModal
+          isOpen={reorderOpen}
+          onClose={() => setReorderOpen(false)}
+          title={title}
+          items={items}
+          onSave={handleReorderSave}
+          titleField={titleField}
+          subtitleField={subtitleField}
+          renderItem={renderItem}
+        />
       )}
     </div>
   )
