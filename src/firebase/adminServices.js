@@ -378,17 +378,7 @@ export const deleteContactMessage = async (id) => {
 
 export const reorderItems = async (collectionName, orderPairs) => {
   try {
-    // --- Diagnostic: verify token and auth state before write ---
-    const tokenResult = await requireAdminToken()
-    console.debug('[reorderItems] auth.currentUser uid:', auth?.currentUser?.uid)
-    console.debug('[reorderItems] auth.currentUser email:', auth?.currentUser?.email)
-    console.debug('[reorderItems] admin claim:', tokenResult?.claims?.admin)
-    console.debug('[reorderItems] admin === true:', tokenResult?.claims?.admin === true)
-    console.debug('[reorderItems] collection:', collectionName)
-    console.debug('[reorderItems] writing doc IDs:', orderPairs.map((p) => p.id))
-    console.debug('[reorderItems] fields written per doc: { order: <number> }')
-    console.debug('[reorderItems] Firebase app name:', db?.app?.name ?? 'unknown')
-    // ---
+    await requireAdminToken()
     requireDb()
     const batch = writeBatch(db)
     // Write only `order` — the minimal field needed for reordering.

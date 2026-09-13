@@ -43,13 +43,13 @@ export default function Home() {
     prefetch()
   }, [])
 
-  const { data: siteContent, loading: _contentLoading, error: _contentError, retry: _retryContent } = useSiteContent()
-  const { data: projects, loading: projectsLoading, error: _projectsError, retry: _retryProjects } = useProjects()
-  const { data: skills, loading: skillsLoading, error: _skillsError } = useSkills({ defer: 100 })
-  const { data: experience, loading: expLoading, error: _expError } = useExperience({ defer: 150 })
-  const { data: education, loading: eduLoading, error: _eduError } = useEducation({ defer: 200 })
-  const { data: certificates, loading: certLoading, error: _certError } = useCertificates({ defer: 250 })
-  const { data: currentWork, loading: workLoading, error: _workError } = useCurrentWork({ defer: 300 })
+  const { data: siteContent } = useSiteContent()
+  const { data: projects, loading: projectsLoading } = useProjects()
+  const { data: skills, loading: skillsLoading } = useSkills({ defer: 100 })
+  const { data: experience, loading: expLoading } = useExperience({ defer: 150 })
+  const { data: education, loading: eduLoading } = useEducation({ defer: 200 })
+  const { data: certificates, loading: certLoading } = useCertificates({ defer: 250 })
+  const { data: currentWork, loading: workLoading } = useCurrentWork({ defer: 300 })
   const { data: settings } = useSettings()
 
   return (

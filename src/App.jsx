@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import Layout from './components/Layout'
-import PageLoader from './components/PageLoader'
+import FullPageLoader from './components/FullPageLoader'
 import NotFound from './pages/NotFound'
 import { AdminSessionProvider } from './admin/context/AdminSessionContext.jsx'
 import { AdminCacheProvider } from './admin/context/AdminCacheContext.jsx'
@@ -31,98 +31,43 @@ function AdminSessionLayout() {
   )
 }
 
-function App() {
+export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={
-          <Suspense fallback={<PageLoader />}>
-            <Home />
-          </Suspense>
-        } />
-        <Route path="blog" element={
-          <Suspense fallback={<PageLoader />}>
-            <Blog />
-          </Suspense>
-        } />
-        <Route path="blog/:id" element={
-          <Suspense fallback={<PageLoader />}>
-            <BlogPost />
-          </Suspense>
-        } />
-      </Route>
-
-      <Route element={<AdminSessionLayout />}>
-        <Route path="/admin/login" element={
-          <Suspense fallback={<PageLoader />}>
-            <AdminLogin />
-          </Suspense>
-        } />
-        <Route path="/admin" element={
-          <Suspense fallback={<PageLoader />}>
-            <AdminCacheProvider>
-              <UnreadCountProvider>
-                <AdminLayout />
-              </UnreadCountProvider>
-            </AdminCacheProvider>
-          </Suspense>
-        }>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={
-            <Suspense fallback={<PageLoader />}>
-              <AdminDashboardIndex />
-            </Suspense>
-          } />
-          <Route path="projects" element={
-            <Suspense fallback={<PageLoader />}>
-              <ProjectsPage />
-            </Suspense>
-          } />
-          <Route path="skills" element={
-            <Suspense fallback={<PageLoader />}>
-              <SkillsPage />
-            </Suspense>
-          } />
-          <Route path="experience" element={
-            <Suspense fallback={<PageLoader />}>
-              <ExperiencePage />
-            </Suspense>
-          } />
-          <Route path="education" element={
-            <Suspense fallback={<PageLoader />}>
-              <EducationPage />
-            </Suspense>
-          } />
-          <Route path="certificates" element={
-            <Suspense fallback={<PageLoader />}>
-              <CertificatesPage />
-            </Suspense>
-          } />
-          <Route path="current-work" element={
-            <Suspense fallback={<PageLoader />}>
-              <CurrentWorkPage />
-            </Suspense>
-          } />
-          <Route path="blog" element={
-            <Suspense fallback={<PageLoader />}>
-              <BlogPage />
-            </Suspense>
-          } />
-          <Route path="messages" element={
-            <Suspense fallback={<PageLoader />}>
-              <MessagesPage />
-            </Suspense>
-          } />
-          <Route path="settings" element={
-            <Suspense fallback={<PageLoader />}>
-              <SettingsPage />
-            </Suspense>
-          } />
+    <Suspense fallback={<FullPageLoader />}>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="blog" element={<Blog />} />
+          <Route path="blog/:id" element={<BlogPost />} />
         </Route>
-      </Route>
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+
+        <Route element={<AdminSessionLayout />}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminCacheProvider>
+                <UnreadCountProvider>
+                  <AdminLayout />
+                </UnreadCountProvider>
+              </AdminCacheProvider>
+            }
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboardIndex />} />
+            <Route path="projects" element={<ProjectsPage />} />
+            <Route path="skills" element={<SkillsPage />} />
+            <Route path="experience" element={<ExperiencePage />} />
+            <Route path="education" element={<EducationPage />} />
+            <Route path="certificates" element={<CertificatesPage />} />
+            <Route path="current-work" element={<CurrentWorkPage />} />
+            <Route path="blog" element={<BlogPage />} />
+            <Route path="messages" element={<MessagesPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   )
 }
-
-export default App
