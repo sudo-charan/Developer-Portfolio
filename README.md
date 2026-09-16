@@ -6,7 +6,7 @@ Modern, dark-themed personal portfolio website built with React, Vite, Tailwind 
 
 - **Responsive design** — Mobile-first layout with Tailwind CSS
 - **Dark theme** — Full dark mode with smooth transitions via Tailwind CSS 4
-- **Animations** — Framer Motion for page transitions, skill badges, and interactive elements
+- **"Ask Charan AI" Assistant** — Interactive cyberpunk floating drawer AI agent for recruiters and tech leads powered by a Vercel Serverless Function (`/api/ask-charan`) using server-only `GEMINI_API_KEY` / `OPENAI_API_KEY` with Firestore as source of truth and client fallback
 - **Admin dashboard** — Full CRUD management for projects, skills, experience, education, certificates, blog posts, and contact messages
 - **Firebase backend** — Real-time data with Firestore, authentication with Firebase Auth, and file storage with Firebase Storage
 - **Blog** — Markdown-like content management with publish/unpublish workflow

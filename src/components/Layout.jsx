@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Sun, Moon, Download } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import { useSettings } from '../hooks/useFirestore'
+import AiAssistantDrawer from './AiAssistant/AiAssistantDrawer'
 
 const navLinks = [
   { name: 'Home', href: '#home' },
@@ -197,6 +198,7 @@ export default memo(function Layout() {
       </nav>
 
       <main><Outlet /></main>
+      <AiAssistantDrawer />
     </div>
   )
 })
