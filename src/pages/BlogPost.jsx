@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, Clock } from 'lucide-react'
 import { useBlogPost } from '../hooks/useFirestore'
 import { formatFirestoreDate } from '../utils/format'
 import BlogPostSkeleton from '../components/blog/BlogPostSkeleton'
+import MarkdownRenderer from '../components/blog/MarkdownRenderer'
 
 export default function BlogPost() {
   const { id } = useParams()
@@ -63,14 +64,10 @@ export default function BlogPost() {
             )}
           </div>
 
-          <h1 className="text-3xl md:text-4xl font-bold mb-8 leading-tight">{post.title}</h1>
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-8 leading-tight tracking-tight text-text-primary font-mono">{post.title}</h1>
 
-          <div className="max-w-none space-y-4">
-            {post.content?.split('\n').map((paragraph, i) => (
-              <p key={i} className="text-text-secondary leading-relaxed">
-                {paragraph}
-              </p>
-            ))}
+          <div className="mt-8">
+            <MarkdownRenderer content={post.content} />
           </div>
         </motion.article>
       </div>
