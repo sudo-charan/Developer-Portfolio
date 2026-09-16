@@ -14,7 +14,7 @@ const SUGGESTED_PROMPTS = [
 const INITIAL_WELCOME = {
   id: 'welcome',
   sender: 'ai',
-  text: '👋 Hi! I’m **Ask Charan AI**.\n\nExplore Charanraj’s projects, technical skills, experience, and tech journey — or ask me about **GuardGPT**.',
+  text: '👋 Hi! I’m **Ask Charan AI**.\n\nExplore Charanraj’s projects, technical skills, experience, and tech journey.',
 }
 
 function renderFormattedMessage(text, onNavigate) {
