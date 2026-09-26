@@ -7,10 +7,10 @@ Modern, dark-themed personal portfolio website built with React, Vite, Tailwind 
 - **Responsive design** — Mobile-first layout with Tailwind CSS
 - **Dark theme** — Full dark mode with smooth transitions via Tailwind CSS 4
 - **"Ask Charan AI" Assistant** — Interactive cyberpunk floating drawer AI agent for recruiters and tech leads powered by a Vercel Serverless Function (`/api/ask-charan`) using server-only `GEMINI_API_KEY` / `OPENAI_API_KEY` with Firestore as source of truth and client fallback
-- **Admin dashboard** — Full CRUD management for projects, skills, experience, education, certificates, blog posts, and contact messages
+- **Admin dashboard** — Full CRUD management for projects, skills, experience, education, certificates, blog posts, and contact messages, with an admin-only recent activity history
 - **Firebase backend** — Real-time data with Firestore, authentication with Firebase Auth, and file storage with Firebase Storage
-- **Blog** — Markdown-like content management with publish/unpublish workflow
-- **Contact form** — User-submitted messages stored in Firestore with admin inbox
+- **Blog** — Markdown content management with draft preview, publish/unpublish, and scheduled publishing
+- **Contact form** — User-submitted messages stored in Firestore with an admin inbox, search, filtered CSV export, and separate read/reply tracking
 - **Analytics** — Vercel Web Analytics for privacy-friendly pageview tracking
 - **Performance** — Code splitting, lazy loading, and optimized assets
 
@@ -79,8 +79,21 @@ Modern, dark-themed personal portfolio website built with React, Vite, Tailwind 
 4. The admin dashboard supports:
    - Full CRUD for projects, skills, experience, education, certificates, blog posts
    - Drag-and-drop reordering (via Framer Motion) for all sortable collections
-   - Contact message inbox with read/unread/starred/archived filtering
+   - Contact message inbox with search, read/unread/starred/archived and needs-reply/replied filters, bulk follow-up actions, and CSV export of the current filtered results
    - Settings management (hero, about, social links, resume URL)
+
+## Scheduled blog publishing
+
+The admin blog editor can preview posts and schedule publication in the admin's local timezone. Scheduled times are stored in Firestore as UTC timestamps; a Firebase scheduled function checks for due posts every minute, publishes them, and records the publication in the admin activity history. Scheduled posts remain private until published.
+
+The scheduled function requires Firebase Functions and Cloud Scheduler, which require the Blaze billing plan. Install the Functions dependencies and deploy its code, the updated Firestore rules, and the scheduled-post index:
+
+```bash
+npm --prefix functions ci
+firebase deploy --only functions,firestore:rules,firestore:indexes
+```
+
+To cancel a scheduled post, change its status to Draft in the admin blog editor. The public blog and sitemap include only posts whose status is `published`.
 
 ### Serverless API configuration
 
@@ -97,13 +110,14 @@ Firestore and Storage rules are configured in:
 - `firestore.rules` — Defines read/write access:
   - Public collections (projects, skills, experience, education, certificates, currentWork, blogPosts) are readable by everyone
   - Admin-only write access via `isAdmin()` custom claim check
+  - `adminActivity` is readable by admins and append-only; content mutations and their activity entries are committed together
   - `contactMessages` creation is restricted to the server-side contact endpoint
   - `currentWork` has a single active item enforced via rules
 - `storage.rules` — Admin-only file uploads, public reads
 
-Deploy rules:
+Deploy rules and indexes:
 ```bash
-firebase deploy --only firestore:rules,storage:rules
+firebase deploy --only firestore:rules,firestore:indexes,storage:rules
 # or
 firebase deploy
 ```

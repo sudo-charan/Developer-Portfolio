@@ -1,13 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, X } from 'lucide-react'
+import { Calendar, Clock, Eye, Plus, Edit2, Trash2, X } from 'lucide-react'
+import { Timestamp, deleteField } from '@firebase/firestore'
 import { getBlogPosts } from '../../firebase/services'
 import { createBlogPost, updateBlogPost, deleteBlogPost } from '../../firebase/adminServices'
 import { SkeletonTable } from '../components/Skeletons'
 import { useAdminCache } from '../hooks/useAdminCache'
+import MarkdownRenderer from '../../components/blog/MarkdownRenderer'
+import { formatFirestoreDate } from '../../utils/format'
 
 const CACHE_KEY = 'admin_blog_posts'
 const CACHE_TTL = 60 * 1000
+
+function toLocalDateTimeValue(value) {
+  if (!value) return ''
+  const date = value?.toDate ? value.toDate() : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
+}
+
+function formatScheduledDate(value) {
+  const date = value?.toDate ? value.toDate() : new Date(value)
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString()
+}
 
 export default function BlogPage() {
   const { get, set: setItem, clear: clearCache } = useAdminCache()
@@ -23,8 +38,9 @@ export default function BlogPage() {
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [previewPost, setPreviewPost] = useState(null)
   const [formData, setFormData] = useState({
-    title: '', content: '', excerpt: '', category: '', tags: '', status: 'draft', readingTime: '', coverImage: ''
+    title: '', content: '', excerpt: '', category: '', tags: '', status: 'draft', readingTime: '', coverImage: '', scheduledAt: ''
   })
   const [saving, setSaving] = useState(false)
   const isMountedRef = useRef(true)
@@ -82,6 +98,7 @@ export default function BlogPage() {
     setError('')
     setSaving(true)
     try {
+      const existingPost = posts.find((post) => post.id === editing)
       const data = {
         title: formData.title,
         content: formData.content,
@@ -92,15 +109,34 @@ export default function BlogPage() {
         readingTime: parseInt(formData.readingTime) || 5,
         coverImage: formData.coverImage || '',
       }
+      if (formData.status === 'scheduled') {
+        const scheduledDate = new Date(formData.scheduledAt)
+        if (!formData.scheduledAt || Number.isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
+          throw new Error('Choose a future date and time to schedule this post.')
+        }
+        data.scheduledAt = Timestamp.fromDate(scheduledDate)
+      } else if (editing && existingPost?.scheduledAt) {
+        data.scheduledAt = deleteField()
+      }
+      if (formData.status === 'published' && existingPost?.status !== 'published') {
+        data.publishedAt = Timestamp.now()
+      }
       if (editing) {
-        await updateBlogPost(editing, data)
+        const activityAction = formData.status === 'published' && existingPost?.status !== 'published'
+          ? 'published'
+          : formData.status === 'scheduled' && existingPost?.status !== 'scheduled'
+            ? 'scheduled'
+            : formData.status === 'draft' && ['published', 'scheduled'].includes(existingPost?.status)
+              ? 'unpublished'
+              : undefined
+        await updateBlogPost(editing, data, activityAction)
       } else {
         await createBlogPost(data)
       }
       clearCache(CACHE_KEY)
       setShowForm(false)
       setEditing(null)
-      setFormData({ title: '', content: '', excerpt: '', category: '', tags: '', status: 'draft', readingTime: '' })
+      setFormData({ title: '', content: '', excerpt: '', category: '', tags: '', status: 'draft', readingTime: '', coverImage: '', scheduledAt: '' })
       loadPosts()
     } catch (err) {
       const message = err?.message || 'Failed to save post. You may not have permission.'
@@ -121,7 +157,8 @@ export default function BlogPage() {
     try {
       await updateBlogPost(post.id, {
         status: 'published',
-        publishedAt: post.publishedAt || new Date().toISOString(),
+        publishedAt: Timestamp.now(),
+        scheduledAt: deleteField(),
       })
       clearCache(CACHE_KEY)
       loadPosts()
@@ -142,7 +179,7 @@ export default function BlogPage() {
     setError('')
     setSaving(true)
     try {
-      await updateBlogPost(post.id, { status: 'draft' })
+      await updateBlogPost(post.id, { status: 'draft', scheduledAt: deleteField() })
       clearCache(CACHE_KEY)
       loadPosts()
     } catch (err) {
@@ -164,6 +201,7 @@ export default function BlogPage() {
       ...post,
       tags: post.tags?.join(', ') || '',
       readingTime: post.readingTime?.toString() || '',
+      scheduledAt: toLocalDateTimeValue(post.scheduledAt),
     })
     setShowForm(true)
     setError('')
@@ -193,9 +231,18 @@ export default function BlogPage() {
 
   const resetForm = () => {
     setEditing(null)
-    setFormData({ title: '', content: '', excerpt: '', category: '', tags: '', status: 'draft', readingTime: '', coverImage: '' })
+    setFormData({ title: '', content: '', excerpt: '', category: '', tags: '', status: 'draft', readingTime: '', coverImage: '', scheduledAt: '' })
     setShowForm(false)
     setError('')
+  }
+
+  const previewCurrentDraft = () => {
+    setPreviewPost({
+      ...formData,
+      tags: formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+      readingTime: parseInt(formData.readingTime) || 5,
+      publishedAt: formData.status === 'scheduled' && formData.scheduledAt ? new Date(formData.scheduledAt) : new Date(),
+    })
   }
 
   return (
@@ -232,17 +279,61 @@ export default function BlogPage() {
               <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="px-4 py-2 bg-dark-bg border border-dark-border text-text-primary focus:outline-none focus:border-accent">
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
+                <option value="scheduled">Schedule</option>
               </select>
+              {formData.status === 'scheduled' && (
+                <label className="block text-xs font-semibold uppercase tracking-widest text-text-muted">
+                  Publish date and time (your local timezone)
+                  <input
+                    type="datetime-local"
+                    required
+                    value={formData.scheduledAt}
+                    onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                    className="mt-2 block w-full px-4 py-2 bg-dark-bg border border-dark-border text-text-primary focus:outline-none focus:border-accent"
+                  />
+                </label>
+              )}
               <textarea value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })} placeholder="Content (plain text or markdown)" rows={6} className="w-full px-4 py-2 bg-dark-bg border border-dark-border text-text-primary focus:outline-none focus:border-accent resize-none" required />
               <div className="flex gap-3">
+                <button type="button" onClick={previewCurrentDraft} className="btn-secondary" disabled={saving}>
+                  Preview
+                </button>
                 <button type="submit" className="btn-primary" disabled={saving}>
-                  {saving ? 'Saving...' : editing ? 'Update' : 'Publish'}
+                  {saving ? 'Saving...' : formData.status === 'scheduled' ? 'Schedule post' : formData.status === 'published' ? 'Publish post' : 'Save draft'}
                 </button>
                 <button type="button" onClick={resetForm} className="btn-secondary" disabled={saving}>
                   Cancel
                 </button>
               </div>
             </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {previewPost && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-4 sm:p-8"
+            onKeyDown={(event) => { if (event.key === 'Escape') setPreviewPost(null) }}
+          >
+            <div role="dialog" aria-modal="true" aria-labelledby="blog-preview-title" className="relative mx-auto max-w-3xl border border-dark-border bg-dark-bg p-5 sm:p-8">
+              <button type="button" onClick={() => setPreviewPost(null)} aria-label="Close preview" className="absolute right-4 top-4 p-2 text-text-muted hover:text-text-primary">
+                <X size={20} />
+              </button>
+              <p className="section-label mb-4">Post preview</p>
+              {previewPost.coverImage && (
+                <img src={previewPost.coverImage} alt={previewPost.title} className="mb-8 h-64 w-full border border-dark-border object-cover md:h-96" />
+              )}
+              <div className="mb-6 flex flex-wrap items-center gap-4">
+                {previewPost.category && <span className="border border-accent/30 px-3 py-1 text-xs font-medium text-accent">{previewPost.category}</span>}
+                <span className="flex items-center gap-1 text-sm text-text-muted"><Calendar size={14} />{formatFirestoreDate(previewPost.publishedAt)}</span>
+                {previewPost.readingTime > 0 && <span className="flex items-center gap-1 text-sm text-text-muted"><Clock size={14} />{previewPost.readingTime} min read</span>}
+              </div>
+              <h2 id="blog-preview-title" className="mb-8 text-3xl font-extrabold leading-tight tracking-tight text-text-primary font-mono sm:text-5xl">{previewPost.title || 'Untitled post'}</h2>
+              <MarkdownRenderer content={previewPost.content} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -254,14 +345,20 @@ export default function BlogPage() {
             <div key={post.id} className={`flex items-center justify-between p-4 ${index !== posts.length - 1 ? 'border-b border-dark-border' : ''}`}>
               <div>
                 <h3 className="font-semibold text-sm">{post.title}</h3>
-                <p className="text-text-muted text-xs font-mono mt-1">{post.category} • {post.status}</p>
+                <p className="text-text-muted text-xs font-mono mt-1">
+                  {post.category} • {post.status}
+                  {post.status === 'scheduled' && post.scheduledAt && ` · ${formatScheduledDate(post.scheduledAt)}`}
+                </p>
               </div>
               <div className="flex gap-2">
+                <button onClick={() => setPreviewPost(post)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label="Preview post"><Eye size={14} /></button>
                 <button onClick={() => handleEdit(post)} className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label="Edit post"><Edit2 size={14} /></button>
-                {post.status === 'draft' ? (
-                  <button onClick={() => handlePublish(post)} className="p-2 border border-accent/30 hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label="Publish post">✓</button>
-                ) : (
+                {post.status === 'published' ? (
                   <button onClick={() => handleUnpublish(post)} className="p-2 border border-dark-border hover:border-text-muted hover:text-text-muted transition-colors" disabled={saving} aria-label="Unpublish post">✗</button>
+                ) : post.status === 'scheduled' ? (
+                  <button onClick={() => handleUnpublish(post)} className="p-2 border border-dark-border hover:border-text-muted hover:text-text-muted transition-colors" disabled={saving} aria-label="Cancel scheduled post"><X size={14} /></button>
+                ) : (
+                  <button onClick={() => handlePublish(post)} className="p-2 border border-accent/30 hover:border-accent hover:text-accent transition-colors" disabled={saving} aria-label="Publish post">✓</button>
                 )}
                 <button onClick={() => handleDelete(post.id)} className="p-2 border border-dark-border hover:border-accent-2 hover:text-accent-2 transition-colors" disabled={saving}><Trash2 size={14} /></button>
               </div>
