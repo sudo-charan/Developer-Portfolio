@@ -5,11 +5,24 @@ import { Calendar, Clock, Search } from 'lucide-react'
 import { useBlogPosts } from '../hooks/useFirestore'
 import { formatFirestoreDate } from '../utils/format'
 import BlogCardSkeleton from '../components/blog/BlogCardSkeleton'
+import usePageMetadata, { SITE_ORIGIN } from '../hooks/usePageMetadata'
 
 export default function Blog() {
   const { data: posts = [], loading, error } = useBlogPosts('published')
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  usePageMetadata({
+    title: 'Blog | Charanraj M',
+    description: 'Articles and research notes on cybersecurity, AI, web development, and technology by Charanraj M.',
+    path: '/blog',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'Insights & Research',
+      url: `${SITE_ORIGIN}/blog`,
+      description: 'Articles and research notes on cybersecurity, AI, web development, and technology.',
+    },
+  })
 
   const categories = ['all', ...new Set(posts.map((p) => p.category).filter(Boolean))]
 

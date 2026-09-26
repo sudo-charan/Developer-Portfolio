@@ -112,6 +112,12 @@ firebase deploy
 
 Vercel Web Analytics is integrated at the application root (`src/main.jsx`) to track page views across client-side navigation. It is privacy-friendly — no cookies or personal data collection.
 
+## Search metadata
+
+The home, blog, and published blog-post routes update their page title, description, canonical URL, social metadata, and structured data in the browser. `/robots.txt` excludes the admin area and points crawlers to `/api/sitemap`, which lists the home page, blog index, and published Firestore posts. The sitemap endpoint uses `VITE_FIREBASE_PROJECT_ID` or `FIREBASE_PROJECT_ID`, and adds `VITE_FIREBASE_API_KEY` to Firestore REST requests when configured; these are the same Firebase client settings used by the frontend.
+
+If the production domain changes, update the site URL in `index.html`, `src/hooks/usePageMetadata.js`, `api/sitemap.js`, and `public/robots.txt`. Route metadata is client-rendered; reliable social previews and indexing by crawlers that do not execute JavaScript still require prerendering or server-side rendering.
+
 ## Deployment
 
 Firebase hosting and rules are configured via `firebase.json`, `.firebaserc`, `firestore.rules`, and `storage.rules`.

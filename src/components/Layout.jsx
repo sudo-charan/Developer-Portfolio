@@ -1,10 +1,11 @@
-import { memo, useEffect, useState } from 'react'
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Sun, Moon, Download } from 'lucide-react'
+import { Bot, Menu, X, Sun, Moon, Download, Sparkles } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import { useSettings } from '../hooks/useFirestore'
-import AiAssistantDrawer from './AiAssistant/AiAssistantDrawer'
+
+const AiAssistantDrawer = lazy(() => import('./AiAssistant/AiAssistantDrawer'))
 
 const navLinks = [
   { name: 'Home', href: '#home' },
@@ -18,12 +19,20 @@ const navLinks = [
 export default memo(function Layout() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [assistantLoaded, setAssistantLoaded] = useState(false)
+  const [assistantOpen, setAssistantOpen] = useState(false)
+  const assistantLauncherRef = useRef(null)
   const [activeSection, setActiveSection] = useState('home')
   const { theme, toggleTheme } = useTheme()
   const { data: settings } = useSettings()
   const resumeUrl = settings?.resumeUrl || null
   const navigate = useNavigate()
   const location = useLocation()
+  const closeAssistant = useCallback(() => setAssistantOpen(false), [])
+  const openAssistant = () => {
+    setAssistantLoaded(true)
+    setAssistantOpen(true)
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -70,7 +79,11 @@ export default memo(function Layout() {
 
   return (
     <div className="min-h-screen bg-dark-bg">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-dark-surface focus:px-4 focus:py-3 focus:text-text-primary">
+        Skip to content
+      </a>
       <nav
+        aria-label="Main navigation"
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? 'bg-dark-bg/90 backdrop-blur-xl border-b border-dark-border'
@@ -145,6 +158,7 @@ export default memo(function Layout() {
                 className="p-2 border border-dark-border hover:border-accent hover:text-accent transition-colors"
                 aria-label="Toggle menu"
                 aria-expanded={mobileOpen}
+                aria-controls="mobile-navigation"
               >
                 {mobileOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -155,6 +169,7 @@ export default memo(function Layout() {
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
+              id="mobile-navigation"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -197,8 +212,31 @@ export default memo(function Layout() {
         </AnimatePresence>
       </nav>
 
-      <main><Outlet /></main>
-      <AiAssistantDrawer />
+      <main id="main-content" tabIndex="-1"><Outlet /></main>
+      <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40">
+        <motion.button
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+          ref={assistantLauncherRef}
+          onClick={openAssistant}
+          className="relative group flex items-center gap-2.5 px-3.5 py-2.5 bg-dark-surface/95 backdrop-blur-md border border-accent/40 text-accent hover:border-accent hover:shadow-[0_0_20px_rgba(249,115,22,0.25)] transition-all duration-300 font-mono text-xs rounded-full cursor-pointer"
+          aria-label="Open Ask Charan AI Assistant"
+          aria-haspopup="dialog"
+        >
+          <Bot size={16} />
+          <span className="font-semibold tracking-wider text-text-primary group-hover:text-accent transition-colors">Ask Charan AI</span>
+          <Sparkles size={12} className="text-accent/70 group-hover:text-accent" />
+        </motion.button>
+      </div>
+      {assistantLoaded && (
+        <Suspense fallback={null}>
+          <AiAssistantDrawer
+            isOpen={assistantOpen}
+            onClose={closeAssistant}
+            returnFocusRef={assistantLauncherRef}
+          />
+        </Suspense>
+      )}
     </div>
   )
 })

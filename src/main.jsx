@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MotionConfig } from 'framer-motion'
 import { BrowserRouter } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
@@ -10,14 +11,16 @@ import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
-      <ThemeProvider>
-        <ErrorBoundary>
-          <App />
-          <Analytics />
-          <SpeedInsights />
-        </ErrorBoundary>
-      </ThemeProvider>
-    </BrowserRouter>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <ThemeProvider>
+          <ErrorBoundary>
+            <App />
+            <Analytics />
+            <SpeedInsights />
+          </ErrorBoundary>
+        </ThemeProvider>
+      </BrowserRouter>
+    </MotionConfig>
   </StrictMode>,
 )

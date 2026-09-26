@@ -90,6 +90,10 @@ html.light {
   html {
     scroll-behavior: smooth;
   }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
   body {
     background-color: var(--color-bg);
     color: var(--color-text-primary);
@@ -607,6 +611,5 @@ html.light .blog-prose {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
 }
-
 
 

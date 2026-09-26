@@ -183,28 +183,28 @@ export function useSiteContent() {
   return useFirestoreDoc(getSiteContent)
 }
 
-export function useProjects() {
-  return useFirestoreCollection('projects')
+export function useProjects(options = {}) {
+  return useFirestoreCollection('projects', options)
 }
 
-export function useSkills() {
-  return useFirestoreCollection('skills')
+export function useSkills(options = {}) {
+  return useFirestoreCollection('skills', options)
 }
 
-export function useExperience() {
-  return useFirestoreCollection('experience')
+export function useExperience(options = {}) {
+  return useFirestoreCollection('experience', options)
 }
 
-export function useEducation() {
-  return useFirestoreCollection('education')
+export function useEducation(options = {}) {
+  return useFirestoreCollection('education', options)
 }
 
-export function useCertificates() {
-  return useFirestoreCollection('certificates')
+export function useCertificates(options = {}) {
+  return useFirestoreCollection('certificates', options)
 }
 
-export function useCurrentWork() {
-  return useFirestoreCollection('currentWork')
+export function useCurrentWork(options = {}) {
+  return useFirestoreCollection('currentWork', options)
 }
 
 export function useSettings() {

@@ -1,9 +1,10 @@
 import { useSiteContent, useProjects, useSkills, useExperience, useEducation, useCertificates, useCurrentWork, useSettings } from '../hooks/useFirestore'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense } from 'react'
 import Hero from './sections/Hero'
 import About from './sections/About'
 import HowIWork from './sections/HowIWork'
 import Footer from '../components/Footer'
+import usePageMetadata, { SITE_ORIGIN } from '../hooks/usePageMetadata'
 
 const Projects = lazy(() => import('./sections/Projects'))
 const Skills = lazy(() => import('./sections/Skills'))
@@ -18,31 +19,6 @@ function SectionSkeleton() {
 }
 
 export default function Home() {
-  useEffect(() => {
-    const prefetch = async () => {
-      try {
-        if ('requestIdleCallback' in window) {
-          await new Promise(resolve => window.requestIdleCallback(resolve, { timeout: 2000 }))
-        } else {
-          await new Promise(resolve => setTimeout(resolve, 2000))
-        }
-        const modules = [
-          import('./sections/Projects'),
-          import('./sections/Skills'),
-          import('./sections/Experience'),
-          import('./sections/Education'),
-          import('./sections/Certificates'),
-          import('./sections/CurrentWork'),
-          import('./sections/Contact'),
-        ]
-        await Promise.allSettled(modules)
-      } catch {
-        // ignore prefetch errors
-      }
-    }
-    prefetch()
-  }, [])
-
   const { data: siteContent } = useSiteContent()
   const { data: projects, loading: projectsLoading } = useProjects()
   const { data: skills, loading: skillsLoading } = useSkills({ defer: 100 })
@@ -51,6 +27,28 @@ export default function Home() {
   const { data: certificates, loading: certLoading } = useCertificates({ defer: 250 })
   const { data: currentWork, loading: workLoading } = useCurrentWork({ defer: 300 })
   const { data: settings } = useSettings()
+  const hero = settings?.hero || siteContent?.hero || {}
+  const name = hero.name || 'Charanraj M'
+  const title = hero.title || 'Full-Stack Developer · Cybersecurity Enthusiast · ISE Student'
+  const description = hero.description ||
+    'Building practical software, exploring AI and cybersecurity, and continuously learning new technologies.'
+  const sameAs = Object.values(settings?.socialLinks || {}).filter(
+    (url) => typeof url === 'string' && url.startsWith('https://'),
+  )
+
+  usePageMetadata({
+    title: `${name} | Full-Stack Developer`,
+    description,
+    path: '/',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name,
+      jobTitle: title,
+      url: SITE_ORIGIN,
+      sameAs,
+    },
+  })
 
   return (
     <>
