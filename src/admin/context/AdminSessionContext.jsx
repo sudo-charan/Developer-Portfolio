@@ -22,6 +22,7 @@ export function AdminSessionProvider({ children }) {
   const signOutAndRedirectRef = useRef(null)
   const isAdminRef = useRef(false)
   const currentUserRef = useRef(null)
+  const authChangeVersionRef = useRef(0)
 
   useEffect(() => {
     isAdminRef.current = isAdmin
@@ -34,34 +35,53 @@ export function AdminSessionProvider({ children }) {
     }
   }, [])
 
-  const validateAdmin = useCallback(async (firebaseUser) => {
+  const validateAdmin = useCallback(async (firebaseUser, version) => {
     currentUserRef.current = firebaseUser
     if (!firebaseUser) {
+      if (version !== authChangeVersionRef.current) return false
       setIsAdmin(false)
       setUser(null)
       setLoading(false)
       return false
     }
 
-    try {
-      const tokenResult = await getIdTokenResult(firebaseUser, true)
-      const admin = tokenResult.claims.admin === true
-      setIsAdmin(admin)
-      setUser(firebaseUser)
-      if (!admin) {
-        setAuthError('Missing admin claim. Re-authenticate or contact the owner.')
-      } else {
-        setAuthError('')
+    const rejectUser = async (message, error) => {
+      if (version !== authChangeVersionRef.current || auth?.currentUser?.uid !== firebaseUser.uid) {
+        return false
       }
-      return admin
-    } catch (error) {
       setIsAdmin(false)
       setUser(null)
-      setAuthError('Unable to verify admin access. Try signing in again.')
-      console.error('[Admin] Claim check failed:', error)
+      setAuthError(message)
+      if (error) {
+        console.error('[Admin] Claim check failed:', error)
+      }
+      try {
+        await signOut(auth)
+      } catch (signOutError) {
+        console.error('[Admin] Unable to sign out unverified user:', signOutError)
+      }
       return false
+    }
+
+    try {
+      const tokenResult = await getIdTokenResult(firebaseUser, true)
+      if (version !== authChangeVersionRef.current || auth?.currentUser?.uid !== firebaseUser.uid) {
+        return false
+      }
+      const admin = tokenResult.claims.admin === true
+      if (!admin) {
+        return rejectUser('Missing admin claim. Re-authenticate or contact the owner.')
+      }
+      setIsAdmin(true)
+      setUser(firebaseUser)
+      setAuthError('')
+      return admin
+    } catch (error) {
+      return rejectUser('Unable to verify admin access. Try signing in again.', error)
     } finally {
-      setLoading(false)
+      if (version === authChangeVersionRef.current) {
+        setLoading(false)
+      }
     }
   }, [])
 
@@ -132,8 +152,9 @@ export function AdminSessionProvider({ children }) {
 
   const logout = useCallback(() => {
     if (signOutAndRedirectRef.current) {
-      signOutAndRedirectRef.current('You have been signed out.')
+      return signOutAndRedirectRef.current('You have been signed out.')
     }
+    return Promise.resolve()
   }, [])
 
   const registerCleanup = useCallback((callback) => {
@@ -151,49 +172,73 @@ export function AdminSessionProvider({ children }) {
     }
 
     let isMounted = true
+    let validatedAdminUser = null
+    let tokenCheckInFlight = false
+
+    const revalidateAdmin = async () => {
+      const firebaseUser = validatedAdminUser
+      if (
+        !firebaseUser ||
+        tokenCheckInFlight ||
+        auth.currentUser?.uid !== firebaseUser.uid ||
+        currentUserRef.current?.uid !== firebaseUser.uid
+      ) {
+        return
+      }
+
+      tokenCheckInFlight = true
+      try {
+        const result = await getIdTokenResult(firebaseUser, true)
+        if (!isMounted || validatedAdminUser?.uid !== firebaseUser.uid) return
+        if (result.claims.admin !== true) {
+          signOutAndRedirectRef.current?.('Your admin session expired. Please sign in again.')
+        }
+      } catch (error) {
+        if (isMounted && validatedAdminUser?.uid === firebaseUser.uid) {
+          console.error('[Admin] Session revalidation failed:', error)
+          signOutAndRedirectRef.current?.('Your admin session expired. Please sign in again.')
+        }
+      } finally {
+        tokenCheckInFlight = false
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        revalidateAdmin()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!isMounted) return
 
-      const admin = await validateAdmin(firebaseUser)
+      const version = ++authChangeVersionRef.current
+      validatedAdminUser = null
+      if (tokenCheckIntervalRef.current) {
+        clearInterval(tokenCheckIntervalRef.current)
+        tokenCheckIntervalRef.current = null
+      }
+      const admin = await validateAdmin(firebaseUser, version)
+      if (!isMounted || version !== authChangeVersionRef.current) return
 
       if (admin && firebaseUser) {
-        if (tokenCheckIntervalRef.current) {
-          clearInterval(tokenCheckIntervalRef.current)
-          tokenCheckIntervalRef.current = null
-        }
+        validatedAdminUser = firebaseUser
         subscribeActivity()
         handleActivity()
-
-        tokenCheckIntervalRef.current = setInterval(async () => {
-          if (!auth) return
-          try {
-            const result = await getIdTokenResult(firebaseUser, true)
-            if (!isMounted || !auth) return
-            if (result.claims.admin !== true) {
-              if (signOutAndRedirectRef.current) {
-                signOutAndRedirectRef.current('Your admin session expired. Please sign in again.')
-              }
-            }
-          } catch {
-            if (isMounted && signOutAndRedirectRef.current) {
-              signOutAndRedirectRef.current('Your admin session expired. Please sign in again.')
-            }
-          }
-        }, TOKEN_REVALIDATE_INTERVAL_MS)
+        tokenCheckIntervalRef.current = setInterval(revalidateAdmin, TOKEN_REVALIDATE_INTERVAL_MS)
       } else {
+        validatedAdminUser = null
         unsubscribeActivity()
         clearInactivityTimer()
-        if (tokenCheckIntervalRef.current) {
-          clearInterval(tokenCheckIntervalRef.current)
-          tokenCheckIntervalRef.current = null
-        }
       }
     })
 
     return () => {
       isMounted = false
+      authChangeVersionRef.current += 1
       unsubscribe()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       unsubscribeActivity()
       clearInactivityTimer()
       if (tokenCheckIntervalRef.current) {
