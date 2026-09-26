@@ -21,8 +21,11 @@ export default memo(function Contact({ settings }) {
       await submitContactMessage(formData)
       setStatus({ type: 'success', message: 'Message sent successfully! I\'ll get back to you soon.' })
       setFormData({ name: '', email: '', subject: '', message: '' })
-    } catch {
-      setStatus({ type: 'error', message: 'Unable to send message right now. Please try again later.' })
+    } catch (err) {
+      setStatus({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Unable to send message right now. Please try again later.',
+      })
     } finally {
       setLoading(false)
     }
@@ -62,6 +65,7 @@ export default memo(function Contact({ settings }) {
                     id="contact-name"
                     type="text"
                     required
+                    maxLength={100}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-3 bg-dark-surface border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
@@ -74,6 +78,7 @@ export default memo(function Contact({ settings }) {
                     id="contact-email"
                     type="email"
                     required
+                    maxLength={254}
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 bg-dark-surface border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
@@ -87,6 +92,7 @@ export default memo(function Contact({ settings }) {
                   id="contact-subject"
                   type="text"
                   required
+                  maxLength={150}
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full px-4 py-3 bg-dark-surface border border-dark-border text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
@@ -98,6 +104,7 @@ export default memo(function Contact({ settings }) {
                 <textarea
                   id="contact-message"
                   required
+                  maxLength={5000}
                   rows={5}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}

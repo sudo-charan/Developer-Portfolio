@@ -82,6 +82,13 @@ Modern, dark-themed personal portfolio website built with React, Vite, Tailwind 
    - Contact message inbox with read/unread/starred/archived filtering
    - Settings management (hero, about, social links, resume URL)
 
+### Serverless API configuration
+
+On Vercel, configure the server-only `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable with a dedicated Firebase service account JSON for contact submissions. Grant that account only the Firestore permissions it needs, and never expose it through a `VITE_` variable. Contact messages are submitted through `/api/contact`; direct public Firestore creates for `contactMessages` are denied by `firestore.rules`, so deploy the updated rules as well.
+
+For local testing of serverless routes, use `vercel dev` rather than `npm run dev` and provide the same server-only environment variable locally. Vite's development server does not run files under `api/`.
+
+The AI endpoint limits request size and conversation history and applies a best-effort in-memory limit of 12 requests per IP per 10 minutes. Contact submissions are limited to 5 per IP per 15 minutes. In-memory limits can reset across serverless instances or cold starts; use a shared rate-limit store if stronger enforcement is needed.
 
 ## Firebase Security
 
@@ -90,7 +97,7 @@ Firestore and Storage rules are configured in:
 - `firestore.rules` — Defines read/write access:
   - Public collections (projects, skills, experience, education, certificates, currentWork, blogPosts) are readable by everyone
   - Admin-only write access via `isAdmin()` custom claim check
-  - `contactMessages` create is open to everyone with `status: 'unread'` enforced
+  - `contactMessages` creation is restricted to the server-side contact endpoint
   - `currentWork` has a single active item enforced via rules
 - `storage.rules` — Admin-only file uploads, public reads
 
