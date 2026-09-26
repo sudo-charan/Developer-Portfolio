@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bot, Sparkles, Send, X, Trash2, Terminal, User, Cpu, ArrowUpRight, Copy, Check } from 'lucide-react'
+import { Bot, Send, X, Trash2, Terminal, User, Cpu, ArrowUpRight, Copy, Check } from 'lucide-react'
 import { queryAiAssistant, fetchPortfolioContext } from '../../services/aiAssistantService'
 
 const SUGGESTED_PROMPTS = [
@@ -102,8 +102,7 @@ function renderFormattedMessage(text, onNavigate) {
   })
 }
 
-export default memo(function AiAssistantDrawer() {
-  const [isOpen, setIsOpen] = useState(false)
+export default memo(function AiAssistantDrawer({ isOpen, onClose, returnFocusRef }) {
   const [messages, setMessages] = useState([
     {
       ...INITIAL_WELCOME,
@@ -115,22 +114,60 @@ export default memo(function AiAssistantDrawer() {
   const [copiedId, setCopiedId] = useState(null)
   const [portfolioContext, setPortfolioContext] = useState(null)
   const messagesEndRef = useRef(null)
+  const dialogRef = useRef(null)
+  const inputRef = useRef(null)
 
-  // Pre-fetch portfolio context when component mounts
   useEffect(() => {
-    fetchPortfolioContext().then((ctx) => setPortfolioContext(ctx))
+    let cancelled = false
+    fetchPortfolioContext()
+      .then((ctx) => {
+        if (!cancelled) setPortfolioContext(ctx)
+      })
+      .catch((error) => {
+        console.error('Failed to load AI assistant context:', error)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  // Close drawer on Escape key
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false)
+    if (!isOpen) {
+      returnFocusRef?.current?.focus()
+      return undefined
+    }
+
+    inputRef.current?.focus()
+    const dialog = dialogRef.current
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation()
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const focusable = dialog?.querySelectorAll(
+        'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusable?.length) {
+        event.preventDefault()
+        dialog?.focus()
+        return
+      }
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
       }
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen])
+    dialog?.addEventListener('keydown', handleKeyDown)
+    return () => dialog?.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose, returnFocusRef])
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -211,47 +248,29 @@ export default memo(function AiAssistantDrawer() {
 
   return (
     <>
-      {/* FLOATING ACTION BUTTON */}
-      <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40">
-        <motion.button
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={() => setIsOpen(true)}
-          className="relative group flex items-center gap-2.5 px-3.5 py-2.5 bg-dark-surface/95 backdrop-blur-md border border-accent/40 text-accent hover:border-accent hover:shadow-[0_0_20px_rgba(249,115,22,0.25)] transition-all duration-300 font-mono text-xs rounded-full cursor-pointer"
-          aria-label="Open Ask Charan AI Assistant"
-        >
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
-          </span>
-          <Bot size={16} className="text-accent group-hover:rotate-12 transition-transform" />
-          <span className="font-semibold tracking-wider text-text-primary group-hover:text-accent transition-colors">
-            Ask Charan AI
-          </span>
-          <Sparkles size={12} className="text-accent/70 group-hover:text-accent" />
-        </motion.button>
-      </div>
-
-      {/* COMPACT FLOATING CHAT PANEL */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Reduced Backdrop Overlay (Lightened Blur & Opacity) */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
+              onClick={onClose}
+              aria-hidden="true"
               className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] transition-opacity"
             />
 
-            {/* Compact Floating Panel */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
               transition={{ type: 'spring', damping: 25, stiffness: 320 }}
               className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 w-auto sm:w-[400px] h-[min(620px,calc(100vh-80px))] bg-dark-surface/95 backdrop-blur-md border border-accent/30 rounded-2xl shadow-2xl shadow-black/80 flex flex-col font-sans overflow-hidden"
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="assistant-dialog-title"
+              tabIndex="-1"
             >
               {/* COMPACT HEADER */}
               <div className="px-4 py-3 border-b border-dark-border bg-dark-surface/90 flex items-center justify-between flex-shrink-0">
@@ -261,7 +280,7 @@ export default memo(function AiAssistantDrawer() {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h3 className="font-bold font-mono tracking-wide text-text-primary text-xs sm:text-sm">
+                      <h3 id="assistant-dialog-title" className="font-bold font-mono tracking-wide text-text-primary text-xs sm:text-sm">
                         ASK CHARAN AI
                       </h3>
                       <span className="px-1.5 py-0.2 text-[9px] font-mono border border-accent/30 text-accent bg-accent/5 uppercase rounded-full">
@@ -282,7 +301,7 @@ export default memo(function AiAssistantDrawer() {
                     <Trash2 size={14} />
                   </button>
                   <button
-                    onClick={() => setIsOpen(false)}
+                    onClick={onClose}
                     aria-label="Close assistant"
                     title="Close Assistant"
                     className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-dark-bg transition-colors cursor-pointer"
@@ -293,7 +312,12 @@ export default memo(function AiAssistantDrawer() {
               </div>
 
               {/* CHAT MESSAGES AREA (FLEX: 1 GROWING CONTAINER) */}
-              <div className="flex-1 overflow-y-auto p-3.5 space-y-3 font-sans text-xs sm:text-sm leading-relaxed ai-chat-scrollbar overscroll-contain">
+              <div
+                className="flex-1 overflow-y-auto p-3.5 space-y-3 font-sans text-xs sm:text-sm leading-relaxed ai-chat-scrollbar overscroll-contain"
+                role="log"
+                aria-label="Assistant conversation"
+                aria-live="polite"
+              >
                 {messages.map((msg) => {
                   const isUser = msg.sender === 'user'
                   return (
@@ -358,6 +382,7 @@ export default memo(function AiAssistantDrawer() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="flex gap-2.5 items-center text-text-muted text-xs font-mono py-1"
+                    role="status"
                   >
                     <div className="w-6 h-6 rounded-full flex items-center justify-center border border-accent/30 bg-dark-bg text-accent">
                       <Bot size={12} />
@@ -403,11 +428,13 @@ export default memo(function AiAssistantDrawer() {
                 className="p-3 border-t border-dark-border bg-dark-surface flex items-center gap-2 flex-shrink-0"
               >
                 <input
+                  ref={inputRef}
                   type="text"
                   value={input}
                   maxLength={2000}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about Charan..."
+                  aria-label="Ask Charan AI a question"
                   disabled={loading}
                   className="flex-1 px-3 py-2 bg-dark-bg border border-dark-border focus:border-accent text-text-primary placeholder:text-text-muted text-xs font-mono rounded-lg focus:outline-hidden transition-colors"
                 />

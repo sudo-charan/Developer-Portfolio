@@ -15,9 +15,7 @@
     <meta property="og:url" content="https://charanrajofficial.vercel.app" />
     <meta property="og:title" content="Charanraj M | Full-Stack Developer" />
     <meta property="og:description" content="Full-Stack Developer, Cybersecurity Enthusiast, and Information Science Student. Building practical software and exploring AI and cybersecurity." />
-    <meta property="og:image" content="https://charanrajofficial.vercel.app/og-image.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Charanraj M | Full-Stack Developer" />
     <meta name="twitter:description" content="Full-Stack Developer, Cybersecurity Enthusiast, and Information Science Student." />
 
@@ -29,7 +27,7 @@
       (function() {
         try {
           var saved = localStorage.getItem('theme');
-          var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark');
+          var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
           document.documentElement.classList.add(theme);
         } catch (e) {}
       })();

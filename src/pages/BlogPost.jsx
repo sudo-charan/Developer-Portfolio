@@ -5,10 +5,36 @@ import { useBlogPost } from '../hooks/useFirestore'
 import { formatFirestoreDate } from '../utils/format'
 import BlogPostSkeleton from '../components/blog/BlogPostSkeleton'
 import MarkdownRenderer from '../components/blog/MarkdownRenderer'
+import usePageMetadata, { SITE_ORIGIN, toIsoDate } from '../hooks/usePageMetadata'
 
 export default function BlogPost() {
   const { id } = useParams()
   const { data: post, loading, error } = useBlogPost(id)
+  const description = post?.excerpt || post?.content?.replace(/[#*_`[\]()]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) ||
+    'Read articles and research notes on cybersecurity, AI, web development, and technology by Charanraj M.'
+  const publishedAt = toIsoDate(post?.publishedAt)
+  usePageMetadata({
+    title: post?.title ? `${post.title} | Charanraj M` : 'Blog | Charanraj M',
+    description,
+    path: `/blog/${id || ''}`,
+    image: post?.coverImage || undefined,
+    type: 'article',
+    noIndex: !loading && (!post || post.status !== 'published' || Boolean(error)),
+    structuredData: post?.status === 'published' ? {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description,
+      image: post.coverImage || undefined,
+      datePublished: publishedAt,
+      author: {
+        '@type': 'Person',
+        name: 'Charanraj M',
+        url: SITE_ORIGIN,
+      },
+      mainEntityOfPage: `${SITE_ORIGIN}/blog/${encodeURIComponent(id || '')}`,
+    } : undefined,
+  })
 
   if (loading) {
     return <BlogPostSkeleton />
