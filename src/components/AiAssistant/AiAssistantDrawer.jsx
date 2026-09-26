@@ -158,7 +158,7 @@ export default memo(function AiAssistantDrawer() {
     setLoading(true)
 
     try {
-      const history = messages.filter((m) => m.id !== 'welcome')
+      const history = messages.filter((m) => m.id !== 'welcome').slice(-10)
       const result = await queryAiAssistant(textToSend, history, portfolioContext)
 
       const aiMsg = {
@@ -405,6 +405,7 @@ export default memo(function AiAssistantDrawer() {
                 <input
                   type="text"
                   value={input}
+                  maxLength={2000}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about Charan..."
                   disabled={loading}

@@ -161,6 +161,14 @@ export async function queryAiAssistant(userMessage, conversationHistory = [], ca
       }),
     })
 
+    if (response.status === 413 || response.status === 429) {
+      const data = await response.json()
+      return {
+        text: data.error || 'Please wait a moment before trying again.',
+        source: 'server',
+      }
+    }
+
     if (response.ok) {
       const data = await response.json()
       if (data.text && !data.fallback) {

@@ -6,8 +6,6 @@ import {
   query,
   orderBy,
   where,
-  addDoc,
-  serverTimestamp,
 } from '@firebase/firestore'
 import { db } from './config'
 import { withTimeout } from './errors'
@@ -20,11 +18,6 @@ function requireDb() {
 }
 
 export { requireDb }
-
-async function withTimeoutAndDb(operation) {
-  requireDb()
-  return withTimeout(operation, 15000)
-}
 
 export const getSiteContent = async () => {
   const dbInstance = requireDb()
@@ -138,12 +131,22 @@ export const getSettings = async () => {
 }
 
 export const submitContactMessage = async (data) => {
-  return withTimeoutAndDb(() => {
-    const dbInstance = requireDb()
-    return addDoc(collection(dbInstance, 'contactMessages'), {
-      ...data,
-      createdAt: serverTimestamp(),
-      status: 'unread',
-    })
-  })
+  const response = await withTimeout(
+    fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    15000
+  )
+  let result
+  try {
+    result = await response.json()
+  } catch {
+    throw new Error('Unable to send your message right now. Please try again later.')
+  }
+  if (!response.ok) {
+    throw new Error(result.error || 'Unable to send your message right now.')
+  }
+  return result
 }

@@ -3,6 +3,13 @@
  * Safe server-side API proxy for Gemini / OpenAI queries.
  * Server-only environment variables: GEMINI_API_KEY, OPENAI_API_KEY
  */
+import { checkRateLimit, getRequestBodySize } from '../server/rateLimit.js'
+
+const MAX_BODY_BYTES = 64 * 1024
+const MAX_MESSAGE_LENGTH = 2000
+const MAX_HISTORY_MESSAGES = 10
+const AI_LIMIT = 12
+const AI_WINDOW_MS = 10 * 60 * 1000
 
 function parseFirestoreFields(fields) {
   if (!fields) return {}
@@ -130,12 +137,46 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' })
   }
 
-  try {
-    const { userMessage, conversationHistory = [], context: clientContext } = req.body || {}
+  if (getRequestBodySize(req.body) > MAX_BODY_BYTES) {
+    return res.status(413).json({ error: 'The request is too large.' })
+  }
 
-    if (!userMessage || typeof userMessage !== 'string') {
-      return res.status(400).json({ error: 'Missing or invalid userMessage.' })
-    }
+  const body = req.body
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return res.status(400).json({ error: 'Invalid request body.' })
+  }
+
+  const userMessage = typeof body.userMessage === 'string' ? body.userMessage.trim() : ''
+  const conversationHistory = body.conversationHistory ?? []
+  if (
+    !userMessage ||
+    userMessage.length > MAX_MESSAGE_LENGTH ||
+    !Array.isArray(conversationHistory) ||
+    conversationHistory.length > MAX_HISTORY_MESSAGES ||
+    conversationHistory.some(
+      (message) =>
+        !message ||
+        typeof message !== 'object' ||
+        !['user', 'ai'].includes(message.sender) ||
+        typeof message.text !== 'string' ||
+        message.text.length > MAX_MESSAGE_LENGTH
+    )
+  ) {
+    return res.status(400).json({ error: 'Please provide a valid message and conversation history.' })
+  }
+
+  const rateLimit = checkRateLimit(req, {
+    bucket: 'ai-assistant',
+    limit: AI_LIMIT,
+    windowMs: AI_WINDOW_MS,
+  })
+  if (!rateLimit.allowed) {
+    res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds))
+    return res.status(429).json({ error: 'Too many questions. Please wait and try again.' })
+  }
+
+  try {
+    const { context: clientContext } = body
 
     // Source of truth: try server-side Firestore context first, fallback to client-sent context
     const serverContext = await getFirestoreContext()
