@@ -267,7 +267,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly([
           'title', 'content', 'excerpt', 'category', 'tags',
           'status', 'readingTime', 'coverImage',
-          'publishedAt', 'createdAt', 'updatedAt'
+          'publishedAt', 'scheduledAt', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.keys().hasAll(['title', 'content'])
         && (!('title' in request.resource.data) || request.resource.data.title is string)
@@ -277,12 +277,17 @@ service cloud.firestore {
         && (!('tags' in request.resource.data) || request.resource.data.tags is list)
         && (!('status' in request.resource.data)
           || request.resource.data.status == 'draft'
-          || request.resource.data.status == 'published')
+          || request.resource.data.status == 'published'
+          || request.resource.data.status == 'scheduled')
         && (!('readingTime' in request.resource.data) || request.resource.data.readingTime is number)
         && (!('coverImage' in request.resource.data) || request.resource.data.coverImage is string)
         && (!('publishedAt' in request.resource.data)
           || request.resource.data.publishedAt is timestamp
           || request.resource.data.publishedAt is string)
+        && (!('scheduledAt' in request.resource.data) || request.resource.data.scheduledAt is timestamp)
+        && (!('status' in request.resource.data)
+          || request.resource.data.status != 'scheduled'
+          || ('scheduledAt' in request.resource.data))
         && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
         && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
       allow update: if isAdmin()
@@ -290,7 +295,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'title', 'content', 'excerpt', 'category', 'tags',
           'status', 'readingTime', 'coverImage',
-          'publishedAt', 'createdAt', 'updatedAt'
+          'publishedAt', 'scheduledAt', 'createdAt', 'updatedAt'
         ])
         && (!('title' in request.resource.data) || request.resource.data.title is string)
         && (!('content' in request.resource.data) || request.resource.data.content is string)
@@ -299,12 +304,17 @@ service cloud.firestore {
         && (!('tags' in request.resource.data) || request.resource.data.tags is list)
         && (!('status' in request.resource.data)
           || request.resource.data.status == 'draft'
-          || request.resource.data.status == 'published')
+          || request.resource.data.status == 'published'
+          || request.resource.data.status == 'scheduled')
         && (!('readingTime' in request.resource.data) || request.resource.data.readingTime is number)
         && (!('coverImage' in request.resource.data) || request.resource.data.coverImage is string)
         && (!('publishedAt' in request.resource.data)
           || request.resource.data.publishedAt is timestamp
           || request.resource.data.publishedAt is string)
+        && (!('scheduledAt' in request.resource.data) || request.resource.data.scheduledAt is timestamp)
+        && (!('status' in request.resource.data)
+          || request.resource.data.status != 'scheduled'
+          || ('scheduledAt' in request.resource.data))
         && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
         && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
       allow delete: if isAdmin();
@@ -319,7 +329,8 @@ service cloud.firestore {
         // affectedKeys() checks only the fields being written, not the full merged document.
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'name', 'email', 'subject', 'message',
-          'createdAt', 'status', 'isStarred', 'isArchived'
+          'createdAt', 'status', 'isStarred', 'isArchived',
+          'replyStatus', 'repliedAt'
         ])
         && (!('name' in request.resource.data) || request.resource.data.name is string)
         && (!('email' in request.resource.data) || request.resource.data.email is string)
@@ -331,8 +342,31 @@ service cloud.firestore {
           || request.resource.data.status == 'read'
           || request.resource.data.status == 'deleted')
         && (!('isStarred' in request.resource.data) || request.resource.data.isStarred is bool)
-        && (!('isArchived' in request.resource.data) || request.resource.data.isArchived is bool);
+        && (!('isArchived' in request.resource.data) || request.resource.data.isArchived is bool)
+        && (!('replyStatus' in request.resource.data)
+          || request.resource.data.replyStatus == 'needs_reply'
+          || request.resource.data.replyStatus == 'replied')
+        && (!('repliedAt' in request.resource.data) || request.resource.data.repliedAt is timestamp);
       allow delete: if isAdmin();
+    }
+
+    // --- adminActivity ---
+    match /adminActivity/{document} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'action', 'collection', 'entityId', 'label', 'actor', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'action', 'collection', 'entityId', 'label', 'actor', 'createdAt'
+        ])
+        && request.resource.data.action is string
+        && request.resource.data.collection is string
+        && request.resource.data.entityId is string
+        && request.resource.data.label is string
+        && request.resource.data.actor is string
+        && request.resource.data.createdAt is timestamp;
+      allow update, delete: if false;
     }
 
     // Default deny

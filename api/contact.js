@@ -69,6 +69,7 @@ export default async function handler(req, res) {
       ...normalized,
       createdAt: FieldValue.serverTimestamp(),
       status: 'unread',
+      replyStatus: 'needs_reply',
     })
     return res.status(200).json({ success: true })
   } catch (error) {

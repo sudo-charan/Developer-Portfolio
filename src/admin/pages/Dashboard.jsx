@@ -5,7 +5,7 @@ import {
   Award, Clock, FileText, MessageSquare, ExternalLink
 } from 'lucide-react'
 import { getProjects, getSkills, getExperience, getEducation, getCertificates, getCurrentWork, getBlogPosts } from '../../firebase/services'
-import { getContactMessages } from '../../firebase/adminServices'
+import { getContactMessages, getRecentAdminActivity } from '../../firebase/adminServices'
 import { auth } from '../../firebase/config'
 import { useUnreadMessageCount } from '../hooks/useUnreadMessageCount'
 import { SkeletonCard, Skeleton } from '../components/Skeletons'
@@ -45,8 +45,27 @@ export default function AdminDashboardIndex() {
     }
     return null
   })
+  const [activity, setActivity] = useState([])
+  const [activityLoading, setActivityLoading] = useState(true)
+  const [activityError, setActivityError] = useState('')
   const unreadCount = useUnreadMessageCount()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    let active = true
+    getRecentAdminActivity()
+      .then((items) => {
+        if (active) setActivity(items)
+      })
+      .catch((err) => {
+        console.error('Failed to load dashboard activity:', err)
+        if (active) setActivityError('Unable to load recent activity.')
+      })
+      .finally(() => {
+        if (active) setActivityLoading(false)
+      })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     const cached = get(CACHE_KEY)
@@ -92,6 +111,51 @@ export default function AdminDashboardIndex() {
   const formatTime = (timestamp) => {
     if (!timestamp) return '--:--'
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const formatActivityTime = (timestamp) => {
+    const date = timestamp?.toDate?.() || (timestamp?.seconds ? new Date(timestamp.seconds * 1000) : null)
+    if (!date || Number.isNaN(date.getTime())) return 'Unknown time'
+    return date.toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
+
+  const activityVerb = {
+    created: 'Created',
+    updated: 'Updated',
+    deleted: 'Deleted',
+    published: 'Published',
+    scheduled: 'Scheduled',
+    unpublished: 'Unpublished',
+    reordered: 'Reordered',
+    message_status_changed: 'Changed message status',
+  }
+
+  const activityCollection = {
+    projects: 'project',
+    skills: 'skill',
+    experience: 'experience',
+    education: 'education',
+    certificates: 'certificate',
+    currentWork: 'current work item',
+    blogPosts: 'blog post',
+    settings: 'settings',
+  }
+
+  const activityPath = {
+    projects: '/admin/projects',
+    skills: '/admin/skills',
+    experience: '/admin/experience',
+    education: '/admin/education',
+    certificates: '/admin/certificates',
+    currentWork: '/admin/current-work',
+    blogPosts: '/admin/blog',
+    settings: '/admin/settings',
+    contactMessages: '/admin/messages',
   }
 
   if (loading) {
@@ -161,8 +225,38 @@ export default function AdminDashboardIndex() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-4">Recent Activity</p>
-          <div className="border border-dark-border bg-dark-surface p-8 text-center">
-            <p className="text-text-muted text-sm">No recent activity available</p>
+          <div className="border border-dark-border bg-dark-surface divide-y divide-dark-border">
+            {activityLoading ? (
+              <div className="p-6 space-y-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ) : activityError ? (
+              <p role="alert" className="p-6 text-center text-sm text-accent-2">{activityError}</p>
+            ) : activity.length === 0 ? (
+              <p className="p-8 text-center text-sm text-text-muted">No recent activity yet.</p>
+            ) : activity.map((item) => {
+              const verb = activityVerb[item.action] || 'Updated'
+              const noun = activityCollection[item.collection] || item.collection
+              const description = item.action === 'message_status_changed'
+                ? item.label
+                : `${verb} ${noun}: ${item.label}`
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => activityPath[item.collection] && navigate(activityPath[item.collection])}
+                  disabled={!activityPath[item.collection]}
+                  className="w-full p-4 text-left hover:bg-dark-elevated transition-colors disabled:cursor-default"
+                >
+                  <span className="block text-sm text-text-secondary">{description}</span>
+                  <span className="block mt-1 text-xs text-text-muted font-mono">
+                    {formatActivityTime(item.createdAt)} · {item.actor}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
 

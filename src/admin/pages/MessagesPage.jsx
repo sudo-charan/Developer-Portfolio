@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Star, Trash2, MailOpen, Archive,
   AlertCircle, ArrowLeft, Reply, RefreshCw, X,
-  Mail, Inbox, Check,
+  Mail, Inbox, Check, Download,
 } from 'lucide-react'
-import { getContactMessages } from '../../firebase/adminServices'
 import {
+  getContactMessages,
   updateMessageStatus,
+  updateMessageReplyStatus,
   toggleMessageStar,
   toggleMessageArchive,
   bulkUpdateMessages,
@@ -24,7 +25,20 @@ const normaliseMessage = (msg) => ({
   isRead: msg.status === 'read',
   isStarred: msg.isStarred === true,
   isArchived: msg.isArchived === true,
+  replyStatus: msg.replyStatus === 'replied' ? 'replied' : 'needs_reply',
 })
+
+function csvCell(value) {
+  let text = String(value ?? '')
+  if (/^[\t\r\n ]*[=+\-@]/.test(text)) text = `'${text}`
+  return `"${text.replaceAll('"', '""')}"`
+}
+
+function messageDate(message) {
+  const date = message.createdAt?.toDate?.() ||
+    (message.createdAt?.seconds ? new Date(message.createdAt.seconds * 1000) : null)
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : ''
+}
 
 // ── Skeleton row ───────────────────────────────────────────────────────────────
 function SkeletonMsgRow() {
@@ -147,6 +161,12 @@ function MsgRow({ msg, isSelected, selectedIds, onSelect, onCheck, onStar }) {
         ].join(' ')}>
           {msg.subject || '(No subject)'}
         </div>
+        <span className={[
+          'inline-block mb-1 text-[9px] font-mono tracking-wide',
+          msg.replyStatus === 'replied' ? 'text-text-muted' : 'text-accent-3',
+        ].join(' ')}>
+          {msg.replyStatus === 'replied' ? 'REPLIED' : 'NEEDS REPLY'}
+        </span>
         {/* Preview */}
         <div className="text-[11px] text-text-muted truncate">
           {(msg.message || msg.email || '').replace(/\n/g, ' ')}
@@ -171,7 +191,7 @@ function MsgRow({ msg, isSelected, selectedIds, onSelect, onCheck, onStar }) {
 }
 
 // ── Detail panel ───────────────────────────────────────────────────────────────
-function DetailPanel({ msg, onClose, onRead, onStar, onArchive, onDelete, busy }) {
+function DetailPanel({ msg, onClose, onRead, onReplyStatus, onStar, onArchive, onDelete, busy }) {
   if (!msg) {
     return (
       <EmptyState
@@ -202,6 +222,9 @@ function DetailPanel({ msg, onClose, onRead, onStar, onArchive, onDelete, busy }
             }
             {msg.isStarred && <span className="text-[10px] px-2 py-0.5 border border-accent-3/40 text-accent-3 font-mono">STARRED</span>}
             {msg.isArchived && <span className="text-[10px] px-2 py-0.5 border border-dark-border text-text-muted font-mono">ARCHIVED</span>}
+            <span className={`text-[10px] px-2 py-0.5 border font-mono ${msg.replyStatus === 'replied' ? 'border-dark-border text-text-muted' : 'border-accent-3/40 text-accent-3'}`}>
+              {msg.replyStatus === 'replied' ? 'REPLIED' : 'NEEDS REPLY'}
+            </span>
           </div>
         </div>
 
@@ -239,6 +262,10 @@ function DetailPanel({ msg, onClose, onRead, onStar, onArchive, onDelete, busy }
         <button type="button" onClick={() => onRead(msg)} disabled={busy}
           className="px-3 py-1.5 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors disabled:opacity-40">
           {msg.isRead ? 'Mark Unread' : 'Mark Read'}
+        </button>
+        <button type="button" onClick={() => onReplyStatus(msg)} disabled={busy}
+          className="px-3 py-1.5 text-xs font-mono border border-dark-border hover:border-accent-3 hover:text-accent-3 transition-colors disabled:opacity-40">
+          {msg.replyStatus === 'replied' ? 'Needs Reply' : 'Mark Replied'}
         </button>
         <button type="button" onClick={() => onStar(msg)} disabled={busy}
           aria-label={msg.isStarred ? 'Unstar' : 'Star'}
@@ -334,6 +361,8 @@ export default function MessagesPage() {
     let r = messages
     if (filter === 'unread') r = r.filter((m) => !m.isRead)
     else if (filter === 'read') r = r.filter((m) => m.isRead)
+    else if (filter === 'needs_reply') r = r.filter((m) => m.replyStatus !== 'replied')
+    else if (filter === 'replied') r = r.filter((m) => m.replyStatus === 'replied')
     else if (filter === 'starred') r = r.filter((m) => m.isStarred)
     else if (filter === 'archived') r = r.filter((m) => m.isArchived)
     else if (filter === 'inbox') r = r.filter((m) => !m.isArchived)
@@ -393,6 +422,22 @@ export default function MessagesPage() {
     finally { setActionLoading(false) }
   }, [patchMessages])
 
+  const handleReplyStatus = useCallback(async (msg) => {
+    if (!msg) return
+    const replyStatus = msg.replyStatus === 'replied' ? 'needs_reply' : 'replied'
+    setActionLoading(true)
+    try {
+      await updateMessageReplyStatus(msg.id, replyStatus)
+      patchMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, replyStatus } : m))
+      setSelectedMessage((selected) => selected?.id === msg.id ? { ...selected, replyStatus } : selected)
+    } catch (err) {
+      console.error('Failed to update reply status:', err)
+      setError('Failed to update reply status. Please try again.')
+    } finally {
+      setActionLoading(false)
+    }
+  }, [patchMessages])
+
   const handleStar = useCallback(async (msg) => {
     if (!msg) return
     setActionLoading(true)
@@ -446,6 +491,20 @@ export default function MessagesPage() {
     } catch (err) { console.error(err) } finally { setActionLoading(false) }
   }, [selectedIds, patchMessages])
 
+  const handleBulkReplyStatus = useCallback(async (replyStatus) => {
+    setActionLoading(true)
+    try {
+      await bulkUpdateMessages(selectedIds, { replyStatus })
+      patchMessages((prev) => prev.map((m) => selectedIds.includes(m.id) ? { ...m, replyStatus } : m))
+      setSelectedIds([])
+    } catch (err) {
+      console.error('Failed to update selected reply statuses:', err)
+      setError('Failed to update reply status for selected messages.')
+    } finally {
+      setActionLoading(false)
+    }
+  }, [selectedIds, patchMessages])
+
   const handleBulkArchive = useCallback(async () => {
     setActionLoading(true)
     try {
@@ -469,6 +528,8 @@ export default function MessagesPage() {
   const emptyMeta = useMemo(() => {
     if (searchTerm.trim()) return { Icon: Search, title: 'No results', description: 'Try a different search term.' }
     if (filter === 'unread') return { Icon: Check, title: "All caught up", description: 'No unread messages right now.' }
+    if (filter === 'needs_reply') return { Icon: Reply, title: 'No messages need a reply', description: 'Messages awaiting a response appear here.' }
+    if (filter === 'replied') return { Icon: Check, title: 'No replied messages', description: 'Messages marked as replied appear here.' }
     if (filter === 'starred') return { Icon: Star, title: 'No starred messages', description: 'Star important messages to find them quickly.' }
     if (filter === 'archived') return { Icon: Archive, title: 'No archived messages', description: 'Archived messages appear here.' }
     if (filter === 'read') return { Icon: MailOpen, title: 'No read messages', description: 'Messages you open will show here.' }
@@ -479,9 +540,37 @@ export default function MessagesPage() {
     { key: 'inbox', label: 'Inbox', count: null },
     { key: 'unread', label: 'Unread', count: unreadCount || null },
     { key: 'read', label: 'Read', count: null },
+    { key: 'needs_reply', label: 'Needs reply', count: messages.filter((m) => m.replyStatus !== 'replied').length || null },
+    { key: 'replied', label: 'Replied', count: messages.filter((m) => m.replyStatus === 'replied').length || null },
     { key: 'starred', label: 'Starred', count: null },
     { key: 'archived', label: 'Archived', count: null },
   ]
+
+  const exportCsv = () => {
+    const headers = ['Name', 'Email', 'Subject', 'Message', 'Received', 'Read status', 'Reply status', 'Starred', 'Archived']
+    const rows = filteredSorted.map((msg) => [
+      msg.name,
+      msg.email,
+      msg.subject,
+      msg.message,
+      messageDate(msg),
+      msg.isRead ? 'Read' : 'Unread',
+      msg.replyStatus === 'replied' ? 'Replied' : 'Needs reply',
+      msg.isStarred ? 'Yes' : 'No',
+      msg.isArchived ? 'Yes' : 'No',
+    ])
+    const csv = [headers, ...rows]
+      .map((row) => row.map(csvCell).join(','))
+      .join('\r\n')
+    const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `contact-messages-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -495,16 +584,28 @@ export default function MessagesPage() {
             {loading ? 'Loading…' : unreadCount > 0 ? `${unreadCount} unread` : 'Inbox empty'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => doLoad(true)}
-          disabled={loading}
-          aria-label="Refresh messages"
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors disabled:opacity-40 flex-shrink-0"
-        >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center justify-end gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={loading || filteredSorted.length === 0}
+            aria-label={`Export ${filteredSorted.length} filtered messages as CSV`}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors disabled:opacity-40"
+          >
+            <Download size={13} />
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => doLoad(true)}
+            disabled={loading}
+            aria-label="Refresh messages"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors disabled:opacity-40"
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Search + sort */}
@@ -598,6 +699,14 @@ export default function MessagesPage() {
                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors disabled:opacity-40">
                   <Mail size={11} /> Mark unread
                 </button>
+                <button type="button" onClick={() => handleBulkReplyStatus('replied')} disabled={actionLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-mono border border-dark-border hover:border-accent-3 hover:text-accent-3 transition-colors disabled:opacity-40">
+                  <Check size={11} /> Mark replied
+                </button>
+                <button type="button" onClick={() => handleBulkReplyStatus('needs_reply')} disabled={actionLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-mono border border-dark-border hover:border-accent-3 hover:text-accent-3 transition-colors disabled:opacity-40">
+                  <Reply size={11} /> Needs reply
+                </button>
                 <button type="button" onClick={handleBulkArchive} disabled={actionLoading}
                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-mono border border-dark-border hover:border-accent hover:text-accent transition-colors disabled:opacity-40">
                   <Archive size={11} /> Archive
@@ -662,6 +771,7 @@ export default function MessagesPage() {
             msg={selectedMessage}
             onClose={() => { setSelectedMessage(null); setMobileDetail(false) }}
             onRead={handleRead}
+            onReplyStatus={handleReplyStatus}
             onStar={handleStar}
             onArchive={handleArchive}
             onDelete={handleDelete}
