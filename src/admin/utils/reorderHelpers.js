@@ -1,14 +1,9 @@
 export function reorderGroup(prev, category, newGroupOrder, groupField) {
+  const reorderedById = new Map(newGroupOrder.map((item) => [item.id, item]))
   const result = []
-  let groupIdx = 0
   for (const item of prev) {
     if ((item[groupField] || 'Uncategorized') === category) {
-      if (groupIdx < newGroupOrder.length) {
-        result.push(newGroupOrder[groupIdx])
-      } else {
-        result.push(item)
-      }
-      groupIdx++
+      result.push(reorderedById.get(item.id) || item)
     } else {
       result.push(item)
     }
@@ -24,9 +19,16 @@ export function reorderCategories(prev, newCategoryOrder, groupField) {
     itemsByCategory.get(cat).push(item)
   }
   const result = []
+  const seenCategories = new Set()
   for (const cat of newCategoryOrder) {
     const items = itemsByCategory.get(cat)
-    if (items) result.push(...items)
+    if (items) {
+      result.push(...items)
+      seenCategories.add(cat)
+    }
+  }
+  for (const [cat, items] of itemsByCategory) {
+    if (!seenCategories.has(cat)) result.push(...items)
   }
   return result
 }

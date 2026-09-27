@@ -198,10 +198,11 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
   const handleReorderSave = async (reorderedItems) => {
     if (!reorderer) return
     try {
-      const orderPairs = reorderedItems.map((item, index) => ({ id: item.id, order: index }))
+      const orderedItems = reorderedItems.map((item, index) => ({ ...item, order: index }))
+      const orderPairs = orderedItems.map(({ id, order }) => ({ id, order }))
       await reorderer(orderPairs)
-      setItems(reorderedItems)
-      if (cacheKey) setItem(cacheKey, reorderedItems)
+      setItems(orderedItems)
+      if (cacheKey) setItem(cacheKey, orderedItems)
     } catch (err) {
       const message = err?.message || 'Failed to reorder items.'
       throw new Error(message)
