@@ -7,6 +7,7 @@ import {
   getSettings,
   getCurrentWork,
 } from '../firebase/services'
+import { normalizePortfolioContext } from '../domain/portfolio'
 
 /**
  * Fetches all portfolio data from Firestore to construct context for local fallback.
@@ -24,7 +25,7 @@ export async function fetchPortfolioContext() {
         getCurrentWork(),
       ])
 
-    return {
+    return normalizePortfolioContext({
       projects: projects.status === 'fulfilled' ? projects.value : [],
       skills: skills.status === 'fulfilled' ? skills.value : [],
       experience: experience.status === 'fulfilled' ? experience.value : [],
@@ -32,10 +33,10 @@ export async function fetchPortfolioContext() {
       certificates: certificates.status === 'fulfilled' ? certificates.value : [],
       settings: settings.status === 'fulfilled' ? settings.value : null,
       currentWork: currentWork.status === 'fulfilled' ? currentWork.value : [],
-    }
+    })
   } catch (error) {
     console.error('Error fetching portfolio context for AI:', error)
-    return {
+    return normalizePortfolioContext({
       projects: [],
       skills: [],
       experience: [],
@@ -43,7 +44,7 @@ export async function fetchPortfolioContext() {
       certificates: [],
       settings: null,
       currentWork: [],
-    }
+    })
   }
 }
 

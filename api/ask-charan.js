@@ -4,6 +4,7 @@
  * Server-only environment variables: GEMINI_API_KEY, OPENAI_API_KEY
  */
 import { checkRateLimit, getRequestBodySize } from '../server/rateLimit.js'
+import { normalizePortfolioContext } from '../src/domain/portfolio.js'
 
 const MAX_BODY_BYTES = 64 * 1024
 const MAX_MESSAGE_LENGTH = 2000
@@ -68,7 +69,7 @@ async function getFirestoreContext() {
       fetchFirestoreDocument(projectId, 'settings/general'),
     ])
 
-    return { projects, skills, experience, education, certificates, settings }
+    return normalizePortfolioContext({ projects, skills, experience, education, certificates, settings })
   } catch {
     return null
   }
@@ -180,7 +181,7 @@ export default async function handler(req, res) {
 
     // Source of truth: try server-side Firestore context first, fallback to client-sent context
     const serverContext = await getFirestoreContext()
-    const activeContext = serverContext || clientContext || {}
+    const activeContext = normalizePortfolioContext(serverContext || clientContext || {})
 
     const geminiApiKey = process.env.GEMINI_API_KEY
     const openaiApiKey = process.env.OPENAI_API_KEY

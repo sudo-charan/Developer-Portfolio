@@ -13,6 +13,7 @@ Modern, dark-themed personal portfolio website built with React, Vite, Tailwind 
 - **Contact form** — User-submitted messages stored in Firestore with an admin inbox, search, filtered CSV export, and separate read/reply tracking
 - **Analytics** — Vercel Web Analytics for privacy-friendly pageview tracking
 - **Performance** — Code splitting, lazy loading, and optimized assets
+- **SEO-ready builds** — Vite builds prerender the home page, blog index, and published blog posts into crawlable HTML
 
 ## Tech Stack
 
@@ -24,6 +25,7 @@ Modern, dark-themed personal portfolio website built with React, Vite, Tailwind 
 - **Lucide React** — Icon library
 - **Vercel Analytics** — Privacy-friendly analytics
 - **Oxlint** — Linting
+- **TypeScript contracts** — Shared domain interfaces with runtime normalization and validation
 
 ## Getting Started
 
@@ -67,6 +69,18 @@ Modern, dark-themed personal portfolio website built with React, Vite, Tailwind 
    ```
 
 6. Open `http://localhost:5173`
+
+### Production build
+
+`npm run build` creates the Vite bundle and then runs `scripts/prerender.mjs`. When
+`VITE_FIREBASE_PROJECT_ID` (or `FIREBASE_PROJECT_ID`) is available, the prerender
+step reads public portfolio content and writes static HTML for `/`, `/blog`, and
+each published `/blog/:id` route. If Firebase is unavailable during a build, it
+still emits crawlable fallback shells and the client application loads normally.
+
+Shared portfolio contracts live in `src/domain/types.ts`; the corresponding
+runtime normalizers and contact validation are in `src/domain/portfolio.js`.
+Run `npm run typecheck` to validate the TypeScript contracts.
 
 ## Admin Setup
 

@@ -11,6 +11,15 @@ import {
 } from '@firebase/firestore'
 import { db } from './config'
 import { withTimeout, getUserFriendlyFirebaseError } from './errors'
+import {
+  normalizeBlogPost,
+  normalizeCertificate,
+  normalizeEducation,
+  normalizeExperience,
+  normalizeProject,
+  normalizeSkill,
+  validateContactMessage,
+} from '../domain/portfolio'
 
 function requireDb() {
   if (!db) {
@@ -47,7 +56,7 @@ export const getProjects = async () => {
   const q = query(collection(dbInstance, 'projects'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   return sortByOrder(
-    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    snapshot.docs.map((doc) => normalizeProject(doc.data(), doc.id)),
     'createdAt',
     true
   )
@@ -57,7 +66,7 @@ export const getSkills = async () => {
   const dbInstance = requireDb()
   const q = query(collection(dbInstance, 'skills'), orderBy('order', 'asc'))
   const snapshot = await getDocs(q)
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  return snapshot.docs.map((doc) => normalizeSkill(doc.data(), doc.id))
 }
 
 export const getExperience = async () => {
@@ -65,7 +74,7 @@ export const getExperience = async () => {
   const q = query(collection(dbInstance, 'experience'), orderBy('startDate', 'desc'))
   const snapshot = await getDocs(q)
   return sortByOrder(
-    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    snapshot.docs.map((doc) => normalizeExperience(doc.data(), doc.id)),
     'startDate',
     true
   )
@@ -76,7 +85,7 @@ export const getEducation = async () => {
   const q = query(collection(dbInstance, 'education'), orderBy('startYear', 'desc'))
   const snapshot = await getDocs(q)
   return sortByOrder(
-    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    snapshot.docs.map((doc) => normalizeEducation(doc.data(), doc.id)),
     'startYear',
     true
   )
@@ -87,7 +96,7 @@ export const getCertificates = async () => {
   const q = query(collection(dbInstance, 'certificates'), orderBy('year', 'desc'))
   const snapshot = await getDocs(q)
   return sortByOrder(
-    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    snapshot.docs.map((doc) => normalizeCertificate(doc.data(), doc.id)),
     'year',
     true
   )
@@ -109,7 +118,7 @@ export const getBlogPosts = async (status = 'published') => {
     q = query(collection(dbInstance, 'blogPosts'), where('status', '==', status))
   }
   const snapshot = await getDocs(q)
-  let posts = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  let posts = snapshot.docs.map((doc) => normalizeBlogPost(doc.data(), doc.id))
   posts = posts.sort((a, b) => {
     const aTime = a.publishedAt?.seconds ? a.publishedAt.seconds * 1000 : new Date(a.publishedAt || 0).getTime()
     const bTime = b.publishedAt?.seconds ? b.publishedAt.seconds * 1000 : new Date(b.publishedAt || 0).getTime()
@@ -122,7 +131,7 @@ export const getBlogPost = async (id) => {
   const dbInstance = requireDb()
   const docRef = doc(dbInstance, 'blogPosts', id)
   const docSnap = await getDoc(docRef)
-  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null
+  return docSnap.exists() ? normalizeBlogPost(docSnap.data(), docSnap.id) : null
 }
 
 export const getSettings = async () => {
@@ -134,6 +143,9 @@ export const getSettings = async () => {
 
 export const submitContactMessage = async (data) => {
   try {
+    if (!validateContactMessage(data)) {
+      throw new Error('Please complete all contact form fields.')
+    }
     const dbInstance = requireDb()
     await withTimeout(addDoc(collection(dbInstance, 'contactMessages'), {
       name: data.name.trim(),
