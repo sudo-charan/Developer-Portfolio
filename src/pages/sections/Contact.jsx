@@ -153,7 +153,14 @@ export default memo(function Contact({ settings }) {
                 </div>
                 <div>
                   <p className="text-xs text-text-muted uppercase tracking-widest mb-1">Email</p>
-                  <p className="text-text-primary font-medium">{socialLinks.email || ''}</p>
+                  {socialLinks.email && (
+                    <a
+                      href={`mailto:${socialLinks.email}`}
+                      className="text-text-primary font-medium hover:text-accent transition-colors"
+                    >
+                      {socialLinks.email}
+                    </a>
+                  )}
                 </div>
               </div>
 

@@ -97,7 +97,7 @@ To cancel a scheduled post, change its status to Draft in the admin blog editor.
 
 ### Serverless API configuration
 
-On Vercel, configure the server-only `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable with a dedicated Firebase service account JSON for contact submissions. Grant that account only the Firestore permissions it needs, and never expose it through a `VITE_` variable. Contact messages are submitted through `/api/contact`; direct public Firestore creates for `contactMessages` are denied by `firestore.rules`, so deploy the updated rules as well.
+On Vercel, configure either the server-only `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable with a Firebase service account JSON, or all three `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` variables. Grant the service account only the Firestore permissions it needs, and never expose credentials through a `VITE_` variable. Contact messages are submitted through `/api/contact`; direct public Firestore creates for `contactMessages` are denied by `firestore.rules`, so deploy the updated rules as well. If the endpoint returns a configuration error, verify the Vercel environment variables are set for the production deployment and redeploy the site.
 
 For local testing of serverless routes, use `vercel dev` rather than `npm run dev` and provide the same server-only environment variable locally. Vite's development server does not run files under `api/`.
 
