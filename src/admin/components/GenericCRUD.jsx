@@ -98,24 +98,12 @@ export default function GenericCRUD({ title, fields, fetcher, adder, updater, re
   }, [fetchItemsData, cacheKey, setItem])
 
   useEffect(() => {
-    let active = true
-    fetchItemsData()
-      .then(({ data, fromCache }) => {
-        if (!active) return
-        const safeData = Array.isArray(data) ? data : []
-        setItems(safeData)
-        if (cacheKey && !fromCache) setItem(cacheKey, safeData)
-        setLoading(false)
-      })
-      .catch((err) => {
-        if (!active) return
-        setError('Failed to load data. Please try again.')
-        console.error('Failed to fetch items:', err)
-        setItems([])
-        setLoading(false)
-      })
-    return () => { active = false }
-  }, [fetchItemsData, cacheKey, setItem])
+    isMountedRef.current = true
+    void Promise.resolve().then(loadItems)
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [loadItems])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

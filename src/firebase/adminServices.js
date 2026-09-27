@@ -484,7 +484,7 @@ export const getRecentAdminActivity = async (count = 10) => {
 
 export const getContactMessages = async () => {
   try {
-    return withTimeoutAndDb(async () => {
+    return await withTimeoutAndDb(async () => {
       const q = query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc'))
       const snapshot = await getDocs(q)
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
