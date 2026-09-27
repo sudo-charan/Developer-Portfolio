@@ -6,21 +6,53 @@ const MAX_BODY_BYTES = 24 * 1024
 const CONTACT_LIMIT = 5
 const CONTACT_WINDOW_MS = 15 * 60 * 1000
 
+class ContactConfigurationError extends Error {}
+
 function getAdminFirestore() {
   const credentialsJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-  if (!credentialsJson) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not configured.')
+  const serviceAccount = credentialsJson
+    ? parseServiceAccount(credentialsJson)
+    : getSplitServiceAccount()
+  if (!serviceAccount || !serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+    throw new ContactConfigurationError('Firebase service-account credentials are not configured.')
+  }
+
+  let credential
+  try {
+    credential = cert(serviceAccount)
+  } catch (error) {
+    throw new ContactConfigurationError(`Firebase service-account credentials are invalid: ${error.message}`)
   }
 
   const existingApp = getApps().find((app) => app.name === 'contact-api')
   const app =
     existingApp ||
     initializeApp(
-      { credential: cert(JSON.parse(credentialsJson)) },
+      { credential },
       'contact-api'
     )
 
   return getFirestore(app)
+}
+
+function parseServiceAccount(credentialsJson) {
+  try {
+    return JSON.parse(credentialsJson)
+  } catch (error) {
+    throw new ContactConfigurationError(`FIREBASE_SERVICE_ACCOUNT_JSON is invalid JSON: ${error.message}`)
+  }
+}
+
+function getSplitServiceAccount() {
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY
+  if (!projectId || !clientEmail || !privateKey) return null
+  return {
+    project_id: projectId,
+    client_email: clientEmail,
+    private_key: privateKey.replace(/\\n/g, '\n'),
+  }
 }
 
 function isValidField(value, maxLength) {
@@ -73,7 +105,20 @@ export default async function handler(req, res) {
     })
     return res.status(200).json({ success: true })
   } catch (error) {
-    console.error('Contact message submission failed:', error)
+    console.error('Contact message submission failed:', {
+      code: error.code || 'unknown',
+      message: error.message || 'Unknown error',
+    })
+    if (error instanceof ContactConfigurationError) {
+      return res.status(503).json({
+        error: 'The contact service is not configured correctly. Please email me directly using the address shown on this page.',
+      })
+    }
+    if (error.code === 7 || error.code === '7' || error.code === 'permission-denied') {
+      return res.status(503).json({
+        error: 'The contact service cannot currently save messages. Please email me directly using the address shown on this page.',
+      })
+    }
     return res.status(500).json({ error: 'Unable to send your message right now.' })
   }
 }

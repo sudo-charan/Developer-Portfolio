@@ -59,7 +59,7 @@ export default function AdminDashboardIndex() {
       })
       .catch((err) => {
         console.error('Failed to load dashboard activity:', err)
-        if (active) setActivityError('Unable to load recent activity.')
+        if (active) setActivityError(err?.message || 'Unable to load recent activity.')
       })
       .finally(() => {
         if (active) setActivityLoading(false)

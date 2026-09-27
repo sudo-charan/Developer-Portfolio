@@ -432,7 +432,7 @@ export default function MessagesPage() {
       setSelectedMessage((selected) => selected?.id === msg.id ? { ...selected, replyStatus } : selected)
     } catch (err) {
       console.error('Failed to update reply status:', err)
-      setError('Failed to update reply status. Please try again.')
+      setError(err?.message || 'Failed to update reply status. Please try again.')
     } finally {
       setActionLoading(false)
     }
@@ -499,7 +499,7 @@ export default function MessagesPage() {
       setSelectedIds([])
     } catch (err) {
       console.error('Failed to update selected reply statuses:', err)
-      setError('Failed to update reply status for selected messages.')
+      setError(err?.message || 'Failed to update reply status for selected messages.')
     } finally {
       setActionLoading(false)
     }
