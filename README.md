@@ -95,13 +95,11 @@ firebase deploy --only functions,firestore:rules,firestore:indexes
 
 To cancel a scheduled post, change its status to Draft in the admin blog editor. The public blog and sitemap include only posts whose status is `published`.
 
-### Serverless API configuration
+### Contact submissions and serverless API
 
-On Vercel, configure either the server-only `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable with a Firebase service account JSON, or all three `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` variables. Grant the service account only the Firestore permissions it needs, and never expose credentials through a `VITE_` variable. Contact messages are submitted through `/api/contact`; direct public Firestore creates for `contactMessages` are denied by `firestore.rules`, so deploy the updated rules as well. If the endpoint returns a configuration error, verify the Vercel environment variables are set for the production deployment and redeploy the site.
+The public contact form writes through the Firebase client SDK and does not require a Firebase service-account secret or Vercel environment variable. Firestore rules allow unauthenticated creates only for validated contact-message fields; public reads, updates, and deletes remain denied. Deploy the Firestore rules before using the form.
 
-For local testing of serverless routes, use `vercel dev` rather than `npm run dev` and provide the same server-only environment variable locally. Vite's development server does not run files under `api/`.
-
-The AI endpoint limits request size and conversation history and applies a best-effort in-memory limit of 12 requests per IP per 10 minutes. Contact submissions are limited to 5 per IP per 15 minutes. In-memory limits can reset across serverless instances or cold starts; use a shared rate-limit store if stronger enforcement is needed.
+The AI assistant uses the serverless `/api/ask-charan` route. Configure its server-only API keys in Vercel. That endpoint limits request size and conversation history and applies a best-effort in-memory limit of 12 requests per IP per 10 minutes; in-memory limits can reset across serverless instances or cold starts.
 
 ## Firebase Security
 
@@ -111,7 +109,7 @@ Firestore and Storage rules are configured in:
   - Public collections (projects, skills, experience, education, certificates, currentWork, blogPosts) are readable by everyone
   - Admin-only write access via `isAdmin()` custom claim check
   - `adminActivity` is readable by admins and append-only; content mutations and their activity entries are committed together
-  - `contactMessages` creation is restricted to the server-side contact endpoint
+  - `contactMessages` allows only tightly validated public submissions; reading and managing messages remain admin-only
   - `currentWork` has a single active item enforced via rules
 - `storage.rules` — Admin-only file uploads, public reads
 

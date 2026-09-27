@@ -6,9 +6,11 @@ import {
   query,
   orderBy,
   where,
+  addDoc,
+  serverTimestamp,
 } from '@firebase/firestore'
 import { db } from './config'
-import { withTimeout } from './errors'
+import { withTimeout, getUserFriendlyFirebaseError } from './errors'
 
 function requireDb() {
   if (!db) {
@@ -131,22 +133,20 @@ export const getSettings = async () => {
 }
 
 export const submitContactMessage = async (data) => {
-  const response = await withTimeout(
-    fetch('/api/contact', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    }),
-    15000
-  )
-  let result
   try {
-    result = await response.json()
-  } catch {
-    throw new Error('Unable to send your message right now. Please try again later.')
+    const dbInstance = requireDb()
+    await withTimeout(addDoc(collection(dbInstance, 'contactMessages'), {
+      name: data.name.trim(),
+      email: data.email.trim(),
+      subject: data.subject.trim(),
+      message: data.message.trim(),
+      createdAt: serverTimestamp(),
+      status: 'unread',
+      replyStatus: 'needs_reply',
+    }), 15000)
+    return { success: true }
+  } catch (error) {
+    console.error('Contact message submission failed:', error)
+    throw new Error(getUserFriendlyFirebaseError(error))
   }
-  if (!response.ok) {
-    throw new Error(result.error || 'Unable to send your message right now.')
-  }
-  return result
 }
