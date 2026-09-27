@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
-import { db, auth, storage } from '../../firebase/config'
+import app, { db, auth } from '../../firebase/config'
 import StatusIndicator from '../components/StatusIndicator'
 
 const FIRESTORE_CHECK_COLLECTION = 'settings'
@@ -20,6 +20,18 @@ async function checkFirestore() {
   }
 }
 
+async function checkStorage() {
+  if (!app) return { status: 'error', value: 'NOT INITIALIZED' }
+  try {
+    const { getStorage } = await import('@firebase/storage')
+    getStorage(app)
+    return { status: 'online', value: 'AVAILABLE' }
+  } catch (err) {
+    console.error('[SystemStatus] Storage check failed:', err)
+    return { status: 'warning', value: 'NOT CONFIGURED (Spark plan)' }
+  }
+}
+
 export default function SystemStatus() {
   const [status, setStatus] = useState({
     firebase: { status: 'loading', value: 'CHECKING' },
@@ -35,8 +47,7 @@ export default function SystemStatus() {
     if (!isMountedRef.current) return
     const firebaseStatus = db ? { status: 'online', value: 'INITIALIZED' } : { status: 'error', value: 'NOT INITIALIZED' }
     const authStatus = auth ? { status: 'online', value: 'ACTIVE' } : { status: 'error', value: 'NOT INITIALIZED' }
-    const storageStatus = storage ? { status: 'online', value: 'AVAILABLE' } : { status: 'warning', value: 'NOT CONFIGURED (Spark plan)' }
-    const firestoreStatus = await checkFirestore()
+    const [firestoreStatus, storageStatus] = await Promise.all([checkFirestore(), checkStorage()])
 
     if (isMountedRef.current) {
       setStatus({

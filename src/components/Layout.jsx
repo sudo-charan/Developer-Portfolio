@@ -212,7 +212,7 @@ export default memo(function Layout() {
         </AnimatePresence>
       </nav>
 
-      <main id="main-content" tabIndex="-1"><Outlet /></main>
+      <main id="main-content" tabIndex="-1"><Outlet context={{ settings }} /></main>
       <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40">
         <motion.button
           whileHover={{ scale: 1.04 }}
