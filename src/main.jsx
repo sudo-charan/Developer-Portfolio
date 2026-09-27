@@ -9,7 +9,10 @@ import { ThemeProvider } from './context/ThemeContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import App from './App.jsx'
 
-createRoot(document.getElementById('root')).render(
+const rootElement = document.getElementById('root')
+const root = createRoot(rootElement)
+
+root.render(
   <StrictMode>
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
@@ -24,3 +27,7 @@ createRoot(document.getElementById('root')).render(
     </MotionConfig>
   </StrictMode>,
 )
+
+if (rootElement.classList.contains('app-hydrating')) {
+  requestAnimationFrame(() => rootElement.classList.remove('app-hydrating'))
+}

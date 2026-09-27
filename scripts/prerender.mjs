@@ -68,7 +68,14 @@ function pageHtml(template, { title, description, path, body, type = 'website', 
     .replace(/<meta name="twitter:title"[^>]*>/, metaTag('name', 'twitter:title', title))
     .replace(/<meta name="twitter:description"[^>]*>/, metaTag('name', 'twitter:description', description))
     .replace(/<link rel="canonical"[^>]*>/, `<link rel="canonical" href="${escapeHtml(canonical)}" />`)
-    .replace('<div id="root"></div>', `<div id="root">${body}</div>`)
+    .replace(
+      '</head>',
+      `<style id="prerender-loader">#root.app-hydrating{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#050505;color:#f8fafc}#root.app-hydrating .prerender-spinner{width:42px;height:42px;border:3px solid #262626;border-top-color:#f97316;border-radius:50%;animation:prerender-spin .8s linear infinite}#root.app-hydrating .prerender-content{display:none}@keyframes prerender-spin{to{transform:rotate(360deg)}}</style></head>`,
+    )
+    .replace(
+      '<div id="root"></div>',
+      `<div id="root" class="app-hydrating"><div class="prerender-spinner" role="status" aria-label="Loading"></div><div class="prerender-content">${body}</div></div>`,
+    )
 
   if (image) {
     html = html
