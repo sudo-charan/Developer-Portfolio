@@ -33,13 +33,14 @@ function ItemRow({
   item,
   position,
   total,
-  dragControls,
   onMoveUp,
   onMoveDown,
   titleField,
   subtitleField,
   renderItem,
 }) {
+  const dragControls = useDragControls()
+
   const onKeyDown = (e) => {
     if (e.key === 'ArrowUp') {
       e.preventDefault()
@@ -119,6 +120,83 @@ function ItemRow({
   )
 }
 
+function CategoryRow({
+  group,
+  onGroupReorder,
+  orderedItems,
+  moveUp,
+  moveDown,
+  titleField,
+  subtitleField,
+  renderItem,
+}) {
+  const categoryDragControls = useDragControls()
+
+  return (
+    <Reorder.Item
+      key={group.category}
+      value={group.category}
+      as="div"
+      dragListener={false}
+      dragControls={categoryDragControls}
+      drag="y"
+      dragPropagation={false}
+      dragTransition={DRAG_SPRING}
+      whileDrag={CATEGORY_DRAG_WHILE}
+      layout="position"
+      transition={LAYOUT_SPRING}
+      className="flex flex-col"
+    >
+      <div className="px-4 py-2 border-b border-dark-border bg-dark-bg/30 flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted font-mono">
+          {group.category}
+          <span className="text-text-muted/60 font-normal normal-case"> ({group.items.length})</span>
+        </h3>
+        <div
+          role="button"
+          tabIndex={0}
+          style={{ touchAction: 'none' }}
+          onPointerDown={(e) => {
+            e.stopPropagation()
+            categoryDragControls.start(e, { distanceThreshold: 5 })
+          }}
+          className="cursor-grab active:cursor-grabbing p-2 text-text-muted hover:text-text-primary transition-colors rounded flex-shrink-0 select-none"
+          aria-label={`Drag to move ${group.category} category`}
+        >
+          <GripVertical size={14} />
+        </div>
+      </div>
+
+      <Reorder.Group
+        axis="y"
+        onReorder={onGroupReorder}
+        values={group.items}
+        as="div"
+        layout="position"
+        transition={LAYOUT_SPRING}
+        className="bg-dark-surface"
+      >
+        {group.items.map((item, groupIdx) => {
+          const globalIndex = orderedItems.indexOf(item)
+          return (
+            <ItemRow
+              key={item.id}
+              item={item}
+              position={groupIdx + 1}
+              total={group.items.length}
+              onMoveUp={() => moveUp(globalIndex)}
+              onMoveDown={() => moveDown(globalIndex)}
+              titleField={titleField}
+              subtitleField={subtitleField}
+              renderItem={renderItem}
+            />
+          )
+        })}
+      </Reorder.Group>
+    </Reorder.Item>
+  )
+}
+
 function ReorderModalInner({
   title,
   items,
@@ -133,8 +211,6 @@ function ReorderModalInner({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const dialogRef = useRef(null)
-  const dragControls = useDragControls()
-  const categoryDragControls = useDragControls()
 
   const grouped = useMemo(() => {
     if (!groupField || orderedItems.length === 0) return null
@@ -249,7 +325,7 @@ function ReorderModalInner({
         </div>
 
         {/* Scrollable List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
           {orderedItems.length === 0 ? (
             <div className="p-8 text-center text-text-muted text-sm">
               No items to reorder.
@@ -260,85 +336,24 @@ function ReorderModalInner({
               onReorder={handleCategoryReorder}
               values={grouped.map((g) => g.category)}
               as="div"
+              layoutScroll
               layout="position"
               transition={LAYOUT_SPRING}
               className="border border-dark-border bg-dark-surface"
             >
-              {grouped.map((group) => {
-                const itemCount = group.items.length
-                return (
-                  <Reorder.Item
-                    key={group.category}
-                    value={group.category}
-                    as="div"
-                    dragListener={false}
-                    dragControls={categoryDragControls}
-                    drag="y"
-                    dragPropagation={false}
-                    dragTransition={DRAG_SPRING}
-                    whileDrag={CATEGORY_DRAG_WHILE}
-                    layout="position"
-                    transition={LAYOUT_SPRING}
-                    className="flex flex-col"
-                  >
-                    {/* Category header — NOT a Reorder.Item, just a styled header with drag handle */}
-                    <div
-                      className="px-4 py-2 border-b border-dark-border bg-dark-bg/30 flex items-center justify-between"
-                    >
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted font-mono">
-                        {group.category}
-                        <span className="text-text-muted/60 font-normal normal-case"> ({itemCount})</span>
-                      </h3>
-                      <div
-                        style={{ touchAction: 'none' }}
-                        onPointerDown={(e) => {
-                          e.stopPropagation()
-                          categoryDragControls.start(e, { distanceThreshold: 5 })
-                        }}
-                        className="
-                          cursor-grab active:cursor-grabbing
-                          p-2 text-text-muted hover:text-text-primary
-                          transition-colors
-                          rounded
-                          flex-shrink-0 select-none
-                        "
-                        aria-label={`Drag to move ${group.category} category`}
-                      >
-                        <GripVertical size={14} />
-                      </div>
-                    </div>
-
-                    {/* Inner Reorder.Group — item-level reordering within this category */}
-                    <Reorder.Group
-                      axis="y"
-                      onReorder={(newOrder) => handleGroupReorder(group.category, newOrder)}
-                      values={group.items}
-                      as="div"
-                      layout="position"
-                      transition={LAYOUT_SPRING}
-                      className="bg-dark-surface"
-                    >
-                      {group.items.map((item, groupIdx) => {
-                        const globalIndex = orderedItems.indexOf(item)
-                        return (
-                          <ItemRow
-                            key={item.id}
-                            item={item}
-                            position={groupIdx + 1}
-                            total={itemCount}
-                            dragControls={dragControls}
-                            onMoveUp={() => moveUp(globalIndex)}
-                            onMoveDown={() => moveDown(globalIndex)}
-                            titleField={titleField}
-                            subtitleField={subtitleField}
-                            renderItem={renderItem}
-                          />
-                        )
-                      })}
-                    </Reorder.Group>
-                  </Reorder.Item>
-                )
-              })}
+              {grouped.map((group) => (
+                <CategoryRow
+                  key={group.category}
+                  group={group}
+                  onGroupReorder={(newOrder) => handleGroupReorder(group.category, newOrder)}
+                  orderedItems={orderedItems}
+                  moveUp={moveUp}
+                  moveDown={moveDown}
+                  titleField={titleField}
+                  subtitleField={subtitleField}
+                  renderItem={renderItem}
+                />
+              ))}
             </Reorder.Group>
           ) : (
             <Reorder.Group
@@ -346,6 +361,7 @@ function ReorderModalInner({
               onReorder={setOrderedItems}
               values={orderedItems}
               as="div"
+              layoutScroll
               layout="position"
               transition={LAYOUT_SPRING}
               className="border border-dark-border bg-dark-surface"
@@ -356,7 +372,6 @@ function ReorderModalInner({
                   item={item}
                   position={index + 1}
                   total={orderedItems.length}
-                  dragControls={dragControls}
                   onMoveUp={() => moveUp(index)}
                   onMoveDown={() => moveDown(index)}
                   titleField={titleField}
