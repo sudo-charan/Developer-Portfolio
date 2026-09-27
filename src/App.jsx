@@ -3,9 +3,9 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import Layout from './components/Layout'
 import FullPageLoader from './components/FullPageLoader'
 import NotFound from './pages/NotFound'
-import { AdminSessionProvider } from './admin/context/AdminSessionContext.jsx'
-import { AdminCacheProvider } from './admin/context/AdminCacheContext.jsx'
-import { UnreadCountProvider } from './admin/context/UnreadCountContext.jsx'
+import { AdminSessionProvider } from './admin/context/AdminSessionProvider.jsx'
+import { AdminCacheProvider } from './admin/context/AdminCacheProvider.jsx'
+import { UnreadCountProvider } from './admin/context/UnreadCountProvider.jsx'
 
 const Home = lazy(() => import('./pages/Home'))
 const Blog = lazy(() => import('./pages/Blog'))
