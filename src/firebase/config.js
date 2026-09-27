@@ -1,7 +1,6 @@
 import { initializeApp, getApps, getApp } from '@firebase/app'
 import { getAuth } from '@firebase/auth'
 import { getFirestore } from '@firebase/firestore'
-import { getStorage } from '@firebase/storage'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,15 +21,5 @@ try {
 
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
-
-let storage = null
-if (app && firebaseConfig.storageBucket) {
-  try {
-    storage = getStorage(app)
-  } catch (error) {
-    console.warn('Firebase Storage not available:', error)
-  }
-}
-export { storage }
 
 export default app

@@ -1,27 +1,30 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { AdminCacheContext } from './AdminCacheContext.js'
 
 export function AdminCacheProvider({ children }) {
-  const [cache, setCache] = useState({})
+  const cacheRef = useRef({})
 
-  const get = useCallback((key) => cache[key], [cache])
+  const get = useCallback((key) => cacheRef.current[key], [])
 
   const setItem = useCallback((key, value) => {
-    setCache((prev) => ({ ...prev, [key]: { data: value, timestamp: Date.now() } }))
+    cacheRef.current[key] = { data: value, timestamp: Date.now() }
   }, [])
 
   const clearKey = useCallback((key) => {
-    setCache((prev) => {
-      const next = { ...prev }
-      delete next[key]
-      return next
-    })
+    delete cacheRef.current[key]
   }, [])
 
-  const clearAll = useCallback(() => setCache({}), [])
+  const clearAll = useCallback(() => {
+    cacheRef.current = {}
+  }, [])
+
+  const value = useMemo(
+    () => ({ get, set: setItem, clearKey, clearAll }),
+    [get, setItem, clearKey, clearAll],
+  )
 
   return (
-    <AdminCacheContext.Provider value={{ cache, get, set: setItem, clearKey, clearAll }}>
+    <AdminCacheContext.Provider value={value}>
       {children}
     </AdminCacheContext.Provider>
   )

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Star, Trash2, MailOpen, Archive,
@@ -303,13 +303,16 @@ export default function MessagesPage() {
   const [selectedIds, setSelectedIds] = useState([])
   const [selectedMessage, setSelectedMessage] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const loadRequestRef = useRef(0)
   // Mobile: whether detail panel is shown (full-width overlay)
   const [mobileDetail, setMobileDetail] = useState(false)
 
   const doLoad = useCallback(async (forceRefresh = false) => {
+    const requestId = ++loadRequestRef.current
     if (!forceRefresh) {
       const cached = get(CACHE_KEY)
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        if (requestId !== loadRequestRef.current) return
         setMessages(cached.data.map(normaliseMessage))
         setLoading(false)
         return
@@ -319,10 +322,12 @@ export default function MessagesPage() {
     setError('')
     try {
       const data = await getContactMessages()
+      if (requestId !== loadRequestRef.current) return
       const norm = (Array.isArray(data) ? data : []).map(normaliseMessage)
       setMessages(norm)
       setItem(CACHE_KEY, norm)
     } catch (err) {
+      if (requestId !== loadRequestRef.current) return
       setError(err.message || 'Failed to load messages.')
       console.error('Failed to load messages:', err)
     } finally {
@@ -331,31 +336,11 @@ export default function MessagesPage() {
   }, [get, setItem])
 
   useEffect(() => {
-    let mounted = true
-    const run = async () => {
-      const cached = get(CACHE_KEY)
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        if (mounted) { setMessages(cached.data.map(normaliseMessage)); setLoading(false) }
-        return
-      }
-      if (mounted) setLoading(true)
-      try {
-        const data = await getContactMessages()
-        if (!mounted) return
-        const norm = (Array.isArray(data) ? data : []).map(normaliseMessage)
-        setMessages(norm)
-        setItem(CACHE_KEY, norm)
-      } catch (err) {
-        if (!mounted) return
-        setError(err.message || 'Failed to load messages.')
-        console.error('Failed to load messages:', err)
-      } finally {
-        if (mounted) setLoading(false)
-      }
+    Promise.resolve().then(() => doLoad())
+    return () => {
+      loadRequestRef.current += 1
     }
-    run()
-    return () => { mounted = false }
-  }, [get, setItem])
+  }, [doLoad])
 
   const filteredSorted = useMemo(() => {
     let r = messages

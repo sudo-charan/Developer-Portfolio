@@ -1,17 +1,10 @@
-import { useContext, useRef, useCallback, useEffect } from 'react'
+import { useContext, useCallback } from 'react'
 import { AdminCacheContext } from '../context/AdminCacheContext.js'
 
 export function useAdminCache() {
   const context = useContext(AdminCacheContext)
-  const cacheRef = useRef(context?.cache || {})
 
-  useEffect(() => {
-    if (context?.cache) {
-      cacheRef.current = context.cache
-    }
-  }, [context?.cache])
-
-  const get = useCallback((key) => cacheRef.current[key], [])
+  const get = useCallback((key) => context?.get?.(key), [context])
 
   const setItem = useCallback((key, value) => {
     if (context?.set) {

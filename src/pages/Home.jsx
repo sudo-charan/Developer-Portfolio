@@ -1,5 +1,6 @@
-import { useSiteContent, useProjects, useSkills, useExperience, useEducation, useCertificates, useCurrentWork, useSettings } from '../hooks/useFirestore'
+import { useSiteContent, useProjects, useSkills, useExperience, useEducation, useCertificates, useCurrentWork } from '../hooks/useFirestore'
 import { lazy, Suspense } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import Hero from './sections/Hero'
 import About from './sections/About'
 import HowIWork from './sections/HowIWork'
@@ -20,13 +21,13 @@ function SectionSkeleton() {
 
 export default function Home() {
   const { data: siteContent } = useSiteContent()
+  const { settings } = useOutletContext() || {}
   const { data: projects, loading: projectsLoading } = useProjects()
   const { data: skills, loading: skillsLoading } = useSkills({ defer: 100 })
   const { data: experience, loading: expLoading } = useExperience({ defer: 150 })
   const { data: education, loading: eduLoading } = useEducation({ defer: 200 })
   const { data: certificates, loading: certLoading } = useCertificates({ defer: 250 })
   const { data: currentWork, loading: workLoading } = useCurrentWork({ defer: 300 })
-  const { data: settings } = useSettings()
   const hero = settings?.hero || siteContent?.hero || {}
   const name = hero.name || 'Charanraj M'
   const title = hero.title || 'Full-Stack Developer · Cybersecurity Enthusiast · ISE Student'
