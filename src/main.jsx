@@ -7,6 +7,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react'
 import './index.css'
 import { ThemeProvider } from './context/ThemeContext'
 import ErrorBoundary from './components/ErrorBoundary'
+import HydrationGate from './components/HydrationGate'
 import App from './App.jsx'
 
 const rootElement = document.getElementById('root')
@@ -18,7 +19,9 @@ root.render(
       <BrowserRouter>
         <ThemeProvider>
           <ErrorBoundary>
-            <App />
+            <HydrationGate>
+              <App />
+            </HydrationGate>
             <Analytics />
             <SpeedInsights />
           </ErrorBoundary>
@@ -27,7 +30,3 @@ root.render(
     </MotionConfig>
   </StrictMode>,
 )
-
-if (rootElement.classList.contains('app-hydrating')) {
-  requestAnimationFrame(() => rootElement.classList.remove('app-hydrating'))
-}
