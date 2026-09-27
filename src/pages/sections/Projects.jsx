@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ExternalLink, Star, Terminal } from 'lucide-react'
 
@@ -41,6 +41,29 @@ function GuardGPTWorkflow() {
 export default memo(function Projects({ projects }) {
   const featured = projects?.filter((p) => p.featured) || []
   const others = projects?.filter((p) => !p.featured) || []
+  const [activeTag, setActiveTag] = useState('all')
+
+  const tags = useMemo(() => {
+    const uniqueTags = new Set()
+    projects?.forEach((project) => {
+      project.tags
+        ?.split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .forEach((tag) => uniqueTags.add(tag))
+    })
+    return ['all', ...Array.from(uniqueTags).sort((a, b) => a.localeCompare(b))]
+  }, [projects])
+
+  const matchesTag = (project) =>
+    activeTag === 'all' ||
+    project.tags
+      ?.split(',')
+      .map((tag) => tag.trim())
+      .some((tag) => tag === activeTag)
+
+  const filteredFeatured = featured.filter(matchesTag)
+  const filteredOthers = others.filter(matchesTag)
 
   return (
     <section id="projects" className="py-24 px-4 relative" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
@@ -56,10 +79,32 @@ export default memo(function Projects({ projects }) {
           <p className="section-subtitle">
             Technical analysis and implementation records of completed security and software missions.
           </p>
+          {tags.length > 1 && (
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filter projects by technology">
+              {tags.map((tag) => {
+                const isActive = activeTag === tag
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setActiveTag(tag)}
+                    aria-pressed={isActive}
+                    className={`px-3 py-1.5 text-xs font-mono border transition-colors ${
+                      isActive
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-dark-border text-text-muted hover:border-accent/50 hover:text-accent'
+                    }`}
+                  >
+                    {tag === 'all' ? 'All projects' : tag}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </motion.div>
 
         <div className="space-y-12">
-          {featured.map((project, index) => {
+          {filteredFeatured.map((project, index) => {
             const isGuardGPT = project.name?.toLowerCase().includes('guard')
             return (
               <motion.div
@@ -146,9 +191,9 @@ export default memo(function Projects({ projects }) {
             )
           })}
 
-          {others.length > 0 && (
+          {filteredOthers.length > 0 && (
             <div className="grid md:grid-cols-2 gap-px bg-dark-border">
-              {others.map((project, index) => (
+              {filteredOthers.map((project, index) => (
                 <motion.div
                   key={project.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -209,6 +254,18 @@ export default memo(function Projects({ projects }) {
                   </div>
                 </motion.div>
               ))}
+            </div>
+          )}
+          {filteredFeatured.length === 0 && filteredOthers.length === 0 && (
+            <div className="border border-dark-border bg-dark-surface px-6 py-12 text-center">
+              <p className="text-text-secondary">No projects match this technology filter.</p>
+              <button
+                type="button"
+                onClick={() => setActiveTag('all')}
+                className="mt-4 text-sm font-mono text-accent hover:underline"
+              >
+                Show all projects
+              </button>
             </div>
           )}
         </div>
